@@ -1,0 +1,474 @@
+import { createClient } from "./supabase";
+import { Tables, TablesInsert, TablesUpdate } from "./database.types";
+
+export type { TablesInsert, TablesUpdate };
+
+export type OC = Tables<"ocs">;
+export type OCField = Tables<"oc_fields">;
+export type OCOpenFeed = Tables<"oc_open_feed">;
+export type Profile = Tables<"profiles">;
+export type ChatSession = Tables<"chat_sessions">;
+export type ChatMessage = Tables<"chat_messages">;
+export type SwipeAction = Tables<"swipe_actions">;
+
+export interface OCWithDetails extends OC {
+  fields: OCField[];
+  feed: OCOpenFeed[];
+}
+
+export interface ChatSessionWithOCs extends ChatSession {
+  oc1: OC | null;
+  oc2: OC | null;
+}
+
+export interface IncomingLike {
+  id: string;
+  from_oc_id: string;
+  to_oc_id: string;
+  created_at: string | null;
+  liker_oc: OC | null;
+  target_oc: OC | null;
+}
+
+function getClient() {
+  if (typeof window === "undefined") {
+    throw new Error("supabase-queries is client-only");
+  }
+  return createClient();
+}
+
+export async function getCurrentUser() {
+  const supabase = getClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  return data.user;
+}
+
+export async function getProfile(userId: string): Promise<Profile | null> {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
+  if (error && error.code !== "PGRST116") throw error;
+  return data;
+}
+
+export async function upsertProfile(profile: TablesInsert<"profiles">) {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .upsert(profile, { onConflict: "id" })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getUserOCs(userId: string): Promise<OC[]> {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from("ocs")
+    .select("*")
+    .eq("user_id", userId)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getOCById(ocId: string): Promise<OC | null> {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from("ocs")
+    .select("*")
+    .eq("id", ocId)
+    .single();
+  if (error && error.code !== "PGRST116") throw error;
+  return data;
+}
+
+export async function getOCWithDetails(ocId: string): Promise<OCWithDetails | null> {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from("ocs")
+    .select("*, fields:oc_fields(*), feed:oc_open_feed(*)")
+    .eq("id", ocId)
+    .single();
+  if (error && error.code !== "PGRST116") throw error;
+  if (!data) return null;
+  return {
+    ...data,
+    fields: (data.fields as unknown as OCField[]) ?? [],
+    feed: (data.feed as unknown as OCOpenFeed[]) ?? [],
+  } as OCWithDetails;
+}
+
+export interface CreateOCInput {
+  oc: Omit<TablesInsert<"ocs">, "id">;
+  fields: Omit<TablesInsert<"oc_fields">, "id" | "oc_id">[];
+  feed?: Omit<TablesInsert<"oc_open_feed">, "id" | "oc_id">;
+}
+
+export async function createOC({ oc, fields, feed }: CreateOCInput): Promise<OCWithDetails> {
+  const supabase = getClient();
+  const { data: ocData, error: ocError } = await supabase
+    .from("ocs")
+    .insert(oc)
+    .select()
+    .single();
+  if (ocError) throw ocError;
+
+  const ocId = ocData.id;
+
+  if (fields.length > 0) {
+    const { error: fieldsError } = await supabase
+      .from("oc_fields")
+      .insert(fields.map((f, i) => ({ ...f, oc_id: ocId, sort_order: i })));
+    if (fieldsError) throw fieldsError;
+  }
+
+  if (feed) {
+    const { error: feedError } = await supabase
+      .from("oc_open_feed")
+      .insert({ ...feed, oc_id: ocId });
+    if (feedError) throw feedError;
+  }
+
+  return getOCWithDetails(ocId) as Promise<OCWithDetails>;
+}
+
+export interface UpdateOCInput {
+  ocId: string;
+  oc: TablesInsert<"ocs">;
+  fields: Omit<TablesInsert<"oc_fields">, "id" | "oc_id">[];
+  feed?: Omit<TablesInsert<"oc_open_feed">, "id" | "oc_id">;
+}
+
+export async function updateOC({ ocId, oc, fields, feed }: UpdateOCInput): Promise<OCWithDetails> {
+  const supabase = getClient();
+  const { error: ocError } = await supabase.from("ocs").update(oc).eq("id", ocId);
+  if (ocError) throw ocError;
+
+  const { error: deleteFieldsError } = await supabase
+    .from("oc_fields")
+    .delete()
+    .eq("oc_id", ocId);
+  if (deleteFieldsError) throw deleteFieldsError;
+
+  if (fields.length > 0) {
+    const { error: fieldsError } = await supabase
+      .from("oc_fields")
+      .insert(fields.map((f, i) => ({ ...f, oc_id: ocId, sort_order: i })));
+    if (fieldsError) throw fieldsError;
+  }
+
+  if (feed) {
+    const { error: deleteFeedError } = await supabase
+      .from("oc_open_feed")
+      .delete()
+      .eq("oc_id", ocId);
+    if (deleteFeedError) throw deleteFeedError;
+    const { error: feedError } = await supabase
+      .from("oc_open_feed")
+      .insert({ ...feed, oc_id: ocId });
+    if (feedError) throw feedError;
+  }
+
+  return getOCWithDetails(ocId) as Promise<OCWithDetails>;
+}
+
+export async function deleteOC(ocId: string) {
+  const supabase = getClient();
+  const { error } = await supabase.from("ocs").delete().eq("id", ocId);
+  if (error) throw error;
+}
+
+export async function updateSortOrder(orders: { id: string; sort_order: number }[]) {
+  const supabase = getClient();
+  for (const order of orders) {
+    const { error } = await supabase
+      .from("ocs")
+      .update({ sort_order: order.sort_order })
+      .eq("id", order.id);
+    if (error) throw error;
+  }
+}
+
+export async function recordSwipe(fromOcId: string, toOcId: string, action: "like" | "pass") {
+  const supabase = getClient();
+  const { error } = await supabase.from("swipe_actions").upsert(
+    {
+      from_oc_id: fromOcId,
+      to_oc_id: toOcId,
+      action,
+    },
+    { onConflict: "from_oc_id,to_oc_id" }
+  );
+  if (error) throw error;
+}
+
+export async function checkMutualLike(fromOcId: string, toOcId: string): Promise<boolean> {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from("swipe_actions")
+    .select("*")
+    .eq("from_oc_id", toOcId)
+    .eq("to_oc_id", fromOcId)
+    .eq("action", "like")
+    .single();
+  if (error && error.code !== "PGRST116") throw error;
+  return !!data;
+}
+
+export async function getSwipeCandidates(
+  myOcIds: string[],
+  userId: string,
+  limit = 20
+): Promise<OCWithDetails[]> {
+  const supabase = getClient();
+
+  const { data: swipedData, error: swipedError } = await supabase
+    .from("swipe_actions")
+    .select("to_oc_id")
+    .in("from_oc_id", myOcIds);
+  if (swipedError) throw swipedError;
+  const swipedIds = new Set(swipedData?.map((s) => s.to_oc_id) ?? []);
+
+  const { data: blockedData, error: blockedError } = await supabase
+    .from("blocked_pairs")
+    .select("blocked_oc_id")
+    .in("blocker_oc_id", myOcIds);
+  if (blockedError) throw blockedError;
+  blockedData?.forEach((b) => swipedIds.add(b.blocked_oc_id));
+
+  const { data: blockedByData, error: blockedByError } = await supabase
+    .from("blocked_pairs")
+    .select("blocker_oc_id")
+    .in("blocked_oc_id", myOcIds);
+  if (blockedByError) throw blockedByError;
+  blockedByData?.forEach((b) => swipedIds.add(b.blocker_oc_id));
+
+  const { data, error } = await supabase
+    .from("ocs")
+    .select("*, fields:oc_fields(*), feed:oc_open_feed(*)")
+    .eq("is_swipable", true)
+    .neq("user_id", userId)
+    .not("id", "in", `(${(swipedIds.size > 0 ? Array.from(swipedIds).join(",") : "00000000-0000-0000-0000-000000000000")})`)
+    .limit(limit);
+  if (error) throw error;
+
+  return (data ?? []).map((oc) => ({
+    ...oc,
+    fields: (oc.fields as unknown as OCField[]) ?? [],
+    feed: (oc.feed as unknown as OCOpenFeed[]) ?? [],
+  })) as OCWithDetails[];
+}
+
+export async function getIncomingLikes(myOcIds: string[]): Promise<IncomingLike[]> {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from("swipe_actions")
+    .select(
+      "*, liker_oc:ocs!from_oc_id(id,name,image_url,user_id), target_oc:ocs!to_oc_id(id,name,image_url,user_id)"
+    )
+    .eq("action", "like")
+    .in("to_oc_id", myOcIds);
+  if (error) throw error;
+
+  const outgoingLikes = new Set<string>();
+  const { data: outgoingData } = await supabase
+    .from("swipe_actions")
+    .select("from_oc_id,to_oc_id")
+    .eq("action", "like")
+    .in("from_oc_id", myOcIds);
+  outgoingData?.forEach((o) => outgoingLikes.add(`${o.from_oc_id}-${o.to_oc_id}`));
+
+  return (data ?? [])
+    .filter((like) => !outgoingLikes.has(`${like.target_oc?.id}-${like.liker_oc?.id}`))
+    .map((like) => ({
+      id: like.id,
+      from_oc_id: like.from_oc_id,
+      to_oc_id: like.to_oc_id,
+      created_at: like.created_at,
+      liker_oc: (like.liker_oc as unknown as OC) ?? null,
+      target_oc: (like.target_oc as unknown as OC) ?? null,
+    }));
+}
+
+export async function getPublicOCs(
+  userId: string,
+  options: { name?: string; tag?: string; excludeMine?: boolean } = {}
+): Promise<OCWithDetails[]> {
+  const supabase = getClient();
+  let query = supabase
+    .from("ocs")
+    .select("*, fields:oc_fields(*), feed:oc_open_feed(*)")
+    .eq("is_swipable", true);
+
+  if (options.excludeMine !== false) {
+    query = query.neq("user_id", userId);
+  }
+
+  if (options.name?.trim()) {
+    query = query.ilike("name", `%${options.name.trim()}%`);
+  }
+
+  if (options.tag?.trim()) {
+    query = query.contains("tags", [options.tag.trim().toLowerCase()]);
+  }
+
+  const { data, error } = await query.order("created_at", { ascending: false }).limit(100);
+  if (error) throw error;
+
+  return (data ?? []).map((oc) => ({
+    ...oc,
+    fields: (oc.fields as unknown as OCField[]) ?? [],
+    feed: (oc.feed as unknown as OCOpenFeed[]) ?? [],
+  })) as OCWithDetails[];
+}
+
+export async function createChatSession(
+  oc1Id: string,
+  oc2Id: string,
+  oc2UserId: string,
+  oc2UserName: string | null,
+  oc2Name: string | null
+): Promise<ChatSession> {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from("chat_sessions")
+    .upsert(
+      {
+        oc1_id: oc1Id,
+        oc2_id: oc2Id,
+        oc2_user_id: oc2UserId,
+        oc2_user_name: oc2UserName,
+        oc2_name: oc2Name,
+      },
+      { onConflict: "oc1_id,oc2_id" }
+    )
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getChatSessions(userId: string): Promise<ChatSessionWithOCs[]> {
+  const supabase = getClient();
+  const { data: ocs } = await supabase.from("ocs").select("id").eq("user_id", userId);
+  const myOcIds = ocs?.map((o) => o.id) ?? [];
+  if (myOcIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("chat_sessions")
+    .select(
+      "*, oc1:ocs!oc1_id(*), oc2:ocs!oc2_id(*)"
+    )
+    .or(`oc1_id.in.(${myOcIds.join(",")}),oc2_user_id.eq.${userId}`);
+  if (error) throw error;
+
+  return (data ?? []).map((session) => ({
+    ...session,
+    oc1: (session.oc1 as unknown as OC) ?? null,
+    oc2: (session.oc2 as unknown as OC) ?? null,
+  })) as ChatSessionWithOCs[];
+}
+
+export async function getChatMessages(chatId: string): Promise<ChatMessage[]> {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from("chat_messages")
+    .select("*")
+    .eq("chat_id", chatId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function sendChatMessage(
+  chatId: string,
+  fromOcId: string,
+  text: string,
+  imageUrl?: string
+): Promise<ChatMessage> {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from("chat_messages")
+    .insert({
+      chat_id: chatId,
+      from_oc_id: fromOcId,
+      text,
+      image_url: imageUrl ?? null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteChatSession(chatId: string) {
+  const supabase = getClient();
+  const { error } = await supabase.from("chat_sessions").delete().eq("id", chatId);
+  if (error) throw error;
+}
+
+export async function blockOC(blockerOcId: string, blockedOcId: string) {
+  const supabase = getClient();
+  const { error } = await supabase.from("blocked_pairs").insert({
+    blocker_oc_id: blockerOcId,
+    blocked_oc_id: blockedOcId,
+  });
+  if (error) throw error;
+}
+
+export async function unblockOC(blockerOcId: string, blockedOcId: string) {
+  const supabase = getClient();
+  const { error } = await supabase
+    .from("blocked_pairs")
+    .delete()
+    .eq("blocker_oc_id", blockerOcId)
+    .eq("blocked_oc_id", blockedOcId);
+  if (error) throw error;
+}
+
+export async function isBlocked(oc1Id: string, oc2Id: string): Promise<boolean> {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from("blocked_pairs")
+    .select("id")
+    .or(
+      `and(blocker_oc_id.eq.${oc1Id},blocked_oc_id.eq.${oc2Id}),and(blocker_oc_id.eq.${oc2Id},blocked_oc_id.eq.${oc1Id})`
+    )
+    .limit(1);
+  if (error) throw error;
+  return (data?.length ?? 0) > 0;
+}
+
+export async function toggleOCSwipable(ocId: string, isSwipable: boolean) {
+  const supabase = getClient();
+  const { error } = await supabase
+    .from("ocs")
+    .update({ is_swipable: isSwipable })
+    .eq("id", ocId);
+  if (error) throw error;
+}
+
+export async function toggleAllOCSwipable(userId: string, isSwipable: boolean) {
+  const supabase = getClient();
+  const { error } = await supabase
+    .from("ocs")
+    .update({ is_swipable: isSwipable })
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
+export async function uploadImage(file: File): Promise<string> {
+  const supabase = getClient();
+  const ext = file.name.split(".").pop() ?? "png";
+  const path = `${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from("oc-images").upload(path, file);
+  if (error) throw error;
+  return path;
+}
