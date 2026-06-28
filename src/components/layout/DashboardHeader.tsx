@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -56,8 +57,14 @@ export function DashboardHeader() {
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2 text-lg font-bold text-foreground">
-          <Flame className="size-5 text-primary" />
-          <span>Unhinged</span>
+          <Image
+            src="/icon.avif"
+            alt="Unhinged"
+            width={24}
+            height={24}
+            className="size-6 object-contain"
+          />
+          <span className="hidden md:inline">Unhinged</span>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">

@@ -20,7 +20,7 @@ interface OCProfileProps {
 }
 
 function getField(oc: OCWithDetails, key: string): OCField | undefined {
-  return oc.fields.find((f) => f.field_key === key && f.visible !== false);
+  return oc.fields.find((f) => f.field_key === key && f.visible !== false && f.skipped !== true);
 }
 
 export function OCProfile({ oc, isOwner, backToSwipe, fromOc }: OCProfileProps) {

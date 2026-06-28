@@ -17,8 +17,7 @@ export default function MatchesPage() {
   const { user, isGuest, loading } = useAuth();
   const [ocs, setOcs] = useState<OCWithDetails[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
-  const [nameQuery, setNameQuery] = useState("");
-  const [tagQuery, setTagQuery] = useState("");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     if (loading) return;
@@ -42,10 +41,12 @@ export default function MatchesPage() {
   }, [user, isGuest, loading, router]);
 
   const filtered = ocs.filter((oc) => {
-    const matchesName = oc.name.toLowerCase().includes(nameQuery.toLowerCase());
-    const matchesTag =
-      !tagQuery.trim() || oc.tags?.some((t) => t.toLowerCase().includes(tagQuery.toLowerCase()));
-    return matchesName && matchesTag;
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    const matchesName = oc.name.toLowerCase().includes(q);
+    const matchesId = oc.id.toLowerCase().includes(q);
+    const matchesTag = oc.tags?.some((t) => t.toLowerCase().includes(q));
+    return matchesName || matchesId || matchesTag;
   });
 
   if (loading) {
@@ -88,20 +89,13 @@ export default function MatchesPage() {
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-6">
         <div className="flex flex-col gap-4">
           <h1 className="text-2xl font-bold">Browse Matches</h1>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="relative">
-              <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={nameQuery}
-                onChange={(e) => setNameQuery(e.target.value)}
-                placeholder="Search by name..."
-                className="pl-9"
-              />
-            </div>
+          <div className="relative max-w-md">
+            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              value={tagQuery}
-              onChange={(e) => setTagQuery(e.target.value)}
-              placeholder="Search by tag..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by Name / ID / Tag..."
+              className="pl-9"
             />
           </div>
         </div>
@@ -110,8 +104,8 @@ export default function MatchesPage() {
           <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-card/50 py-16">
             <Frown className="size-10 text-muted-foreground" />
             <p className="text-muted-foreground">No matches found.</p>
-            {nameQuery || tagQuery ? (
-              <Button variant="outline" onClick={() => { setNameQuery(""); setTagQuery(""); }}>
+            {query ? (
+              <Button variant="outline" onClick={() => setQuery("")}>
                 Clear filters
               </Button>
             ) : (

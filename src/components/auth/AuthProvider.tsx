@@ -15,6 +15,7 @@ export interface GuestOC {
   id: string;
   name: string;
   image_url: string | null;
+  images?: string[];
   fields: { field_key: string; value: string | null; label: string }[];
   tags: string[];
   truths_and_lie: string[];

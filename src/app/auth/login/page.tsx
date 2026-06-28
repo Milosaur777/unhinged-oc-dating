@@ -1,18 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Flame, Mail, Lock } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { toast } from "sonner";
 
+function SeparatorWithText({ text }: { text: string }) {
+  return (
+    <div className="relative">
+      <div className="absolute inset-0 flex items-center">
+        <div className="w-full border-t border-border" />
+      </div>
+      <div className="relative flex justify-center">
+        <span className="bg-card px-2 text-xs uppercase tracking-wide text-muted-foreground">
+          {text}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const router = useRouter();
-  const { login, loginWithGoogle } = useAuth();
+  const { login, loginWithGoogle, createGuest } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,15 +53,35 @@ export default function LoginPage() {
     }
   }
 
+  function handleQuickTest() {
+    createGuest();
+    router.push("/");
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
-      <div className="flex w-full max-w-sm flex-col gap-6 rounded-2xl border border-border bg-card p-8 ring-1 ring-foreground/10">
+      <div className="flex w-full max-w-sm flex-col gap-5 rounded-2xl border border-border bg-card p-8 ring-1 ring-foreground/10">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10">
-            <Flame className="size-7 text-primary" />
+          <div className="flex size-16 items-center justify-center rounded-2xl bg-primary/10">
+            <Image
+              src="/icon.avif"
+              alt="Unhinged"
+              width={40}
+              height={40}
+              className="size-10 object-contain"
+            />
           </div>
-          <h1 className="text-center text-2xl font-bold">Sign In</h1>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold">Welcome to Unhinged</h1>
+            <p className="text-sm text-muted-foreground">Sign in to your account</p>
+          </div>
         </div>
+
+        <Button onClick={handleQuickTest} className="w-full">
+          Quick Test Login
+        </Button>
+
+        <SeparatorWithText text="or sign in manually" />
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
@@ -84,25 +119,18 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border" />
-          </div>
-          <div className="relative flex justify-center">
-            <span className="bg-card px-2 text-xs text-muted-foreground">or</span>
-          </div>
-        </div>
+        <SeparatorWithText text="or" />
 
         <Button variant="outline" onClick={handleGoogle} className="w-full">
           Continue with Google
         </Button>
 
-        <p className="text-center text-sm text-muted-foreground">
-          No account?{" "}
-          <Link href="/auth/signup" className="text-primary hover:underline">
+        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <span>Don&apos;t have an account?</span>
+          <Button variant="secondary" size="sm" onClick={() => router.push("/auth/signup")}>
             Sign up
-          </Link>
-        </p>
+          </Button>
+        </div>
       </div>
     </main>
   );

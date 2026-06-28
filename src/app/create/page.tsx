@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, Suspense } from "react";
+import { useEffect, useMemo, useState, Suspense, Fragment, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronLeft,
@@ -11,11 +11,13 @@ import {
   Heart,
   Sparkles,
   Eye,
+  EyeOff,
   Palette,
   Briefcase,
   ShieldCheck,
   MessageSquare,
   ImageIcon,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +32,6 @@ import {
 } from "@/components/ui/select";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import { TagInput } from "@/components/oc/TagInput";
-import { FieldVisibilityToggle } from "@/components/oc/FieldVisibilityToggle";
 import { BadgeSelector, BadgeOption } from "@/components/badge/BadgeSelector";
 import { useAuth, GuestOC } from "@/components/auth/AuthProvider";
 import {
@@ -42,7 +43,7 @@ import {
   TablesInsert,
 } from "@/lib/supabase-queries";
 import { generateRandomOC, RANDOM_TRAITS } from "@/lib/random-oc";
-import { inchesToFtIn, inchesToCm, generateId } from "@/lib/utils";
+import { inchesToFtIn, inchesToCm, generateId, getPublicImageUrl } from "@/lib/utils";
 import { toast } from "sonner";
 
 const SPECIES = [
@@ -120,6 +121,12 @@ const HOMEWORLDS = [
   "Other",
 ];
 
+interface GalleryItem {
+  preview: string;
+  path: string | null;
+  file: File | null;
+}
+
 interface FormState {
   name: string;
   species: string;
@@ -145,11 +152,14 @@ interface FormState {
   openFeed: string;
   imageUrl: string | null;
   imageFile: File | null;
+  galleryImages: GalleryItem[];
   fieldVisibility: Record<string, boolean>;
+  skippedFields: Record<string, boolean>;
   badges: BadgeOption[];
 }
 
 const DEFAULT_VISIBILITY: Record<string, boolean> = {
+  name: true,
   species: true,
   gender: true,
   sexual_orientation: true,
@@ -163,6 +173,32 @@ const DEFAULT_VISIBILITY: Record<string, boolean> = {
   occupation: true,
   homeworld: true,
   backstory: true,
+  truth1: true,
+  truth2: true,
+  lie: true,
+  openFeed: true,
+  tags: true,
+};
+
+const DEFAULT_SKIPPED: Record<string, boolean> = {
+  species: false,
+  gender: false,
+  sexual_orientation: false,
+  romantic_orientation: false,
+  age: false,
+  height_inches: false,
+  personality: false,
+  likes: false,
+  dislikes: false,
+  appearance: false,
+  occupation: false,
+  homeworld: false,
+  backstory: false,
+  truth1: false,
+  truth2: false,
+  lie: false,
+  openFeed: false,
+  tags: false,
 };
 
 const STEPS = [
@@ -173,7 +209,6 @@ const STEPS = [
   { label: "Truths", icon: ShieldCheck },
   { label: "Feed", icon: MessageSquare },
   { label: "Image", icon: ImageIcon },
-  { label: "Visibility", icon: Eye },
 ];
 
 export default function CreateOCPage() {
@@ -226,7 +261,9 @@ function CreateOCForm() {
     openFeed: "",
     imageUrl: null,
     imageFile: null,
+    galleryImages: [],
     fieldVisibility: { ...DEFAULT_VISIBILITY },
+    skippedFields: { ...DEFAULT_SKIPPED },
     badges: [],
   });
 
@@ -234,16 +271,37 @@ function CreateOCForm() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  function updateVisibility(key: string, visible: boolean) {
+    setForm((prev) => ({
+      ...prev,
+      fieldVisibility: { ...prev.fieldVisibility, [key]: visible },
+    }));
+  }
+
+  function updateSkipped(key: string, skipped: boolean) {
+    setForm((prev) => ({
+      ...prev,
+      skippedFields: { ...prev.skippedFields, [key]: skipped },
+    }));
+  }
+
   function populateFromOC(oc: OCWithDetails) {
     const get = (key: string) => oc.fields.find((f) => f.field_key === key)?.value ?? "";
+    const gallery: GalleryItem[] = (oc.images ?? []).map((path) => ({
+      preview: getPublicImageUrl(path),
+      path,
+      file: null,
+    }));
     setForm({
       name: oc.name,
       species: oc.fields.find((f) => f.field_key === "species")?.value || SPECIES[0],
       gender: oc.fields.find((f) => f.field_key === "gender")?.value || GENDERS[0],
       genderCustom: "",
-      sexualOrientation: oc.fields.find((f) => f.field_key === "sexual_orientation")?.value || ORIENTATIONS[0],
+      sexualOrientation:
+        oc.fields.find((f) => f.field_key === "sexual_orientation")?.value || ORIENTATIONS[0],
       sexualCustom: "",
-      romanticOrientation: oc.fields.find((f) => f.field_key === "romantic_orientation")?.value || ORIENTATIONS[0],
+      romanticOrientation:
+        oc.fields.find((f) => f.field_key === "romantic_orientation")?.value || ORIENTATIONS[0],
       romanticCustom: "",
       age: oc.fields.find((f) => f.field_key === "age")?.value || "",
       heightInches: parseInt(oc.fields.find((f) => f.field_key === "height_inches")?.value || "66", 10),
@@ -261,6 +319,7 @@ function CreateOCForm() {
       openFeed: oc.feed?.[0]?.content || "",
       imageUrl: oc.image_url,
       imageFile: null,
+      galleryImages: gallery,
       fieldVisibility: oc.fields.reduce(
         (acc, f) => {
           if (DEFAULT_VISIBILITY[f.field_key] !== undefined) {
@@ -269,6 +328,15 @@ function CreateOCForm() {
           return acc;
         },
         { ...DEFAULT_VISIBILITY }
+      ),
+      skippedFields: oc.fields.reduce(
+        (acc, f) => {
+          if (DEFAULT_SKIPPED[f.field_key] !== undefined) {
+            acc[f.field_key] = f.skipped === true;
+          }
+          return acc;
+        },
+        { ...DEFAULT_SKIPPED }
       ),
       badges: [],
     });
@@ -280,9 +348,11 @@ function CreateOCForm() {
       species: oc.fields.find((f) => f.field_key === "species")?.value || SPECIES[0],
       gender: oc.fields.find((f) => f.field_key === "gender")?.value || GENDERS[0],
       genderCustom: "",
-      sexualOrientation: oc.fields.find((f) => f.field_key === "sexual_orientation")?.value || ORIENTATIONS[0],
+      sexualOrientation:
+        oc.fields.find((f) => f.field_key === "sexual_orientation")?.value || ORIENTATIONS[0],
       sexualCustom: "",
-      romanticOrientation: oc.fields.find((f) => f.field_key === "romantic_orientation")?.value || ORIENTATIONS[0],
+      romanticOrientation:
+        oc.fields.find((f) => f.field_key === "romantic_orientation")?.value || ORIENTATIONS[0],
       romanticCustom: "",
       age: oc.fields.find((f) => f.field_key === "age")?.value || "",
       heightInches: parseInt(oc.fields.find((f) => f.field_key === "height_inches")?.value || "66", 10),
@@ -300,7 +370,13 @@ function CreateOCForm() {
       openFeed: "",
       imageUrl: oc.image_url,
       imageFile: null,
+      galleryImages: (oc.images ?? []).map((path) => ({
+        preview: getPublicImageUrl(path),
+        path,
+        file: null,
+      })),
       fieldVisibility: { ...DEFAULT_VISIBILITY },
+      skippedFields: { ...DEFAULT_SKIPPED },
       badges: [],
     });
   }
@@ -353,11 +429,104 @@ function CreateOCForm() {
     toast.success("Random OC generated");
   }
 
+  function randomizeField(fieldKey: string) {
+    const random = generateRandomOC();
+    switch (fieldKey) {
+      case "species":
+        update("species", random.species);
+        break;
+      case "gender":
+        update("gender", random.gender);
+        update("genderCustom", "");
+        break;
+      case "sexual_orientation":
+        update("sexualOrientation", random.sexualOrientation);
+        update("sexualCustom", "");
+        break;
+      case "romantic_orientation":
+        update("romanticOrientation", random.romanticOrientation);
+        update("romanticCustom", "");
+        break;
+      case "age":
+        update("age", String(random.age));
+        break;
+      case "height_inches":
+        update("heightInches", random.heightInches);
+        break;
+      case "personality":
+        update("personality", random.personality);
+        break;
+      case "tags":
+        update("tags", random.tags);
+        break;
+      case "likes":
+        update("likes", random.likes);
+        break;
+      case "dislikes":
+        update("dislikes", random.dislikes);
+        break;
+      case "appearance":
+        update("appearance", random.appearance);
+        break;
+      case "occupation":
+        update("occupation", random.occupation);
+        break;
+      case "homeworld":
+        update("homeworld", random.homeworld);
+        break;
+      case "backstory":
+        update("backstory", random.backstory);
+        break;
+      case "truth1":
+        update("truth1", random.truths[0]);
+        break;
+      case "truth2":
+        update("truth2", random.truths[1]);
+        break;
+      case "lie":
+        update("lie", random.lie);
+        break;
+      case "openFeed":
+        update("openFeed", random.openFeed);
+        break;
+    }
+  }
+
   function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     const url = URL.createObjectURL(file);
     setForm((prev) => ({ ...prev, imageUrl: url, imageFile: file }));
+  }
+
+  function handleGalleryUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Gallery image must be less than 2MB");
+      return;
+    }
+    setForm((prev) => {
+      if (prev.galleryImages.length >= 3) {
+        toast.error("You can only add up to 3 gallery images");
+        return prev;
+      }
+      return {
+        ...prev,
+        galleryImages: [
+          ...prev.galleryImages,
+          { preview: URL.createObjectURL(file), path: null, file },
+        ],
+      };
+    });
+  }
+
+  function removeGalleryImage(index: number) {
+    setForm((prev) => ({
+      ...prev,
+      galleryImages: prev.galleryImages.filter((_, i) => i !== index),
+    }));
   }
 
   const heightDisplay = useMemo(
@@ -377,8 +546,62 @@ function CreateOCForm() {
       field_type: fieldType,
       value,
       visible: form.fieldVisibility[key] ?? true,
-      skipped: false,
+      skipped: form.skippedFields[key] ?? false,
     };
+  }
+
+  interface FieldHeaderProps {
+    label: string;
+    fieldKey: string;
+    showRandomize?: boolean;
+    showSkip?: boolean;
+  }
+
+  function renderFieldHeader({ label, fieldKey, showRandomize = true, showSkip = true }: FieldHeaderProps): ReactNode {
+    const skipped = form.skippedFields[fieldKey] ?? false;
+    const visible = form.fieldVisibility[fieldKey] ?? true;
+    return (
+      <div className="flex items-center justify-between gap-2">
+        <Label className={skipped ? "text-muted-foreground line-through" : undefined}>{label}</Label>
+        <div className="flex items-center gap-0.5">
+          {showRandomize && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => randomizeField(fieldKey)}
+              aria-label={`Randomize ${label}`}
+            >
+              <Dices className="size-3.5 text-muted-foreground transition-colors hover:text-primary" />
+            </Button>
+          )}
+          {showSkip && (
+            <label className="flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted">
+              <input
+                type="checkbox"
+                className="size-3 accent-primary"
+                checked={skipped}
+                onChange={(e) => updateSkipped(fieldKey, e.target.checked)}
+              />
+              Skip
+            </label>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => updateVisibility(fieldKey, !visible)}
+            aria-label={visible ? `Hide ${label}` : `Show ${label}`}
+          >
+            {visible ? (
+              <Eye className="size-3.5 text-muted-foreground transition-colors hover:text-primary" />
+            ) : (
+              <EyeOff className="size-3.5 text-primary" />
+            )}
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   async function handleSave() {
@@ -393,6 +616,17 @@ function CreateOCForm() {
       let imagePath = form.imageUrl;
       if (form.imageFile) {
         imagePath = await uploadImage(form.imageFile);
+      }
+
+      const galleryPaths: string[] = [];
+      if (!isGuest) {
+        for (const item of form.galleryImages) {
+          if (item.file) {
+            galleryPaths.push(await uploadImage(item.file));
+          } else if (item.path) {
+            galleryPaths.push(item.path);
+          }
+        }
       }
 
       const genderValue = form.gender === "Other" ? form.genderCustom || "Other" : form.gender;
@@ -417,7 +651,11 @@ function CreateOCForm() {
         makeField("backstory", "Backstory", form.backstory, "textarea"),
       ];
 
-      const truthsAndLie = [form.truth1, form.truth2, form.lie].filter(Boolean);
+      const truthsAndLie = [
+        form.skippedFields.truth1 ? "" : form.truth1,
+        form.skippedFields.truth2 ? "" : form.truth2,
+        form.skippedFields.lie ? "" : form.lie,
+      ].filter(Boolean);
 
       if (isGuest) {
         const guestOC: GuestOC = {
@@ -429,7 +667,7 @@ function CreateOCForm() {
             value: f.value ?? null,
             label: f.label,
           })),
-          tags: form.tags,
+          tags: form.skippedFields.tags ? [] : form.tags,
           truths_and_lie: truthsAndLie,
           created_at: new Date().toISOString(),
         };
@@ -446,20 +684,26 @@ function CreateOCForm() {
       const ocData: TablesInsert<"ocs"> = {
         user_id: user!.id,
         name: form.name,
-        tags: form.tags,
+        tags: form.skippedFields.tags ? [] : form.tags,
         truths_and_lie: truthsAndLie,
         image_url: imagePath,
+        images: galleryPaths.length ? galleryPaths : null,
         is_swipable: true,
         is_premade: false,
       };
 
       const feedData: Omit<TablesInsert<"oc_open_feed">, "id" | "oc_id"> = {
         content: form.openFeed,
-        visible: true,
+        visible: !form.skippedFields.openFeed && form.fieldVisibility.openFeed !== false,
       };
 
       if (editId) {
-        await updateOC({ ocId: editId, oc: { ...ocData, id: editId }, fields, feed: feedData });
+        await updateOC({
+          ocId: editId,
+          oc: { ...ocData, id: editId },
+          fields,
+          feed: feedData,
+        });
       } else {
         await createOC({ oc: ocData, fields, feed: feedData });
       }
@@ -500,21 +744,23 @@ function CreateOCForm() {
             const active = index === step;
             const completed = index < step;
             return (
-              <button
-                key={s.label}
-                type="button"
-                onClick={() => setStep(index)}
-                className={`flex flex-1 flex-col items-center gap-1 rounded-md py-2 text-[10px] font-medium transition-colors sm:flex-row sm:justify-center sm:gap-1.5 sm:text-xs ${
-                  active
-                    ? "bg-card text-primary"
-                    : completed
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Icon className="size-3.5 sm:size-4" />
-                <span className="hidden sm:inline">{s.label}</span>
-              </button>
+              <Fragment key={s.label}>
+                {index > 0 && <div className="h-5 w-px bg-border" />}
+                <button
+                  type="button"
+                  onClick={() => setStep(index)}
+                  className={`flex flex-1 flex-col items-center gap-1 rounded-md py-2 text-[10px] font-medium transition-colors sm:flex-row sm:justify-center sm:gap-1.5 sm:text-xs ${
+                    active
+                      ? "bg-card text-primary"
+                      : completed
+                        ? "text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="size-3.5 sm:size-4" />
+                  <span className="hidden sm:inline">{s.label}</span>
+                </button>
+              </Fragment>
             );
           })}
         </div>
@@ -525,7 +771,7 @@ function CreateOCForm() {
               <h2 className="text-lg font-semibold">Basic Info</h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <Label htmlFor="name">Name</Label>
+                  {renderFieldHeader({ label: "Name", fieldKey: "name", showRandomize: false, showSkip: false })}
                   <Input
                     id="name"
                     value={form.name}
@@ -534,7 +780,7 @@ function CreateOCForm() {
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label>Species</Label>
+                  {renderFieldHeader({ label: "Species", fieldKey: "species" })}
                   <Select value={form.species} onValueChange={(v) => v && update("species", v)}>
                     <SelectTrigger className="w-full">
                       <SelectValue />
@@ -549,7 +795,7 @@ function CreateOCForm() {
                   </Select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label>Gender</Label>
+                  {renderFieldHeader({ label: "Gender", fieldKey: "gender" })}
                   <Select value={form.gender} onValueChange={(v) => v && update("gender", v)}>
                     <SelectTrigger className="w-full">
                       <SelectValue />
@@ -572,7 +818,7 @@ function CreateOCForm() {
                   )}
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label>Sexual Orientation</Label>
+                  {renderFieldHeader({ label: "Sexual Orientation", fieldKey: "sexual_orientation" })}
                   <Select
                     value={form.sexualOrientation}
                     onValueChange={(v) => v && update("sexualOrientation", v)}
@@ -598,7 +844,7 @@ function CreateOCForm() {
                   )}
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label>Romantic Orientation</Label>
+                  {renderFieldHeader({ label: "Romantic Orientation", fieldKey: "romantic_orientation" })}
                   <Select
                     value={form.romanticOrientation}
                     onValueChange={(v) => v && update("romanticOrientation", v)}
@@ -624,7 +870,7 @@ function CreateOCForm() {
                   )}
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="age">Age</Label>
+                  {renderFieldHeader({ label: "Age", fieldKey: "age" })}
                   <Input
                     id="age"
                     value={form.age}
@@ -633,7 +879,7 @@ function CreateOCForm() {
                   />
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <Label>Height</Label>
+                  {renderFieldHeader({ label: "Height", fieldKey: "height_inches" })}
                   <div className="flex items-center gap-4">
                     <input
                       type="range"
@@ -654,7 +900,7 @@ function CreateOCForm() {
             <div className="flex flex-col gap-4">
               <h2 className="text-lg font-semibold">Personality</h2>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="personality">Personality Description</Label>
+                {renderFieldHeader({ label: "Personality Description", fieldKey: "personality" })}
                 <Textarea
                   id="personality"
                   value={form.personality}
@@ -664,7 +910,7 @@ function CreateOCForm() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Tags</Label>
+                {renderFieldHeader({ label: "Tags", fieldKey: "tags" })}
                 <TagInput
                   tags={form.tags}
                   onChange={(tags) => update("tags", tags)}
@@ -673,7 +919,7 @@ function CreateOCForm() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="likes">Likes</Label>
+                  {renderFieldHeader({ label: "Likes", fieldKey: "likes" })}
                   <Input
                     id="likes"
                     value={form.likes}
@@ -682,7 +928,7 @@ function CreateOCForm() {
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="dislikes">Dislikes</Label>
+                  {renderFieldHeader({ label: "Dislikes", fieldKey: "dislikes" })}
                   <Input
                     id="dislikes"
                     value={form.dislikes}
@@ -698,7 +944,7 @@ function CreateOCForm() {
             <div className="flex flex-col gap-4">
               <h2 className="text-lg font-semibold">Appearance</h2>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="appearance">Appearance Description</Label>
+                {renderFieldHeader({ label: "Appearance Description", fieldKey: "appearance" })}
                 <Textarea
                   id="appearance"
                   value={form.appearance}
@@ -715,7 +961,7 @@ function CreateOCForm() {
               <h2 className="text-lg font-semibold">Background</h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
-                  <Label>Occupation</Label>
+                  {renderFieldHeader({ label: "Occupation", fieldKey: "occupation" })}
                   <Select value={form.occupation} onValueChange={(v) => v && update("occupation", v)}>
                     <SelectTrigger className="w-full">
                       <SelectValue />
@@ -730,7 +976,7 @@ function CreateOCForm() {
                   </Select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label>Homeworld</Label>
+                  {renderFieldHeader({ label: "Homeworld", fieldKey: "homeworld" })}
                   <Select value={form.homeworld} onValueChange={(v) => v && update("homeworld", v)}>
                     <SelectTrigger className="w-full">
                       <SelectValue />
@@ -746,7 +992,7 @@ function CreateOCForm() {
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="backstory">Backstory</Label>
+                {renderFieldHeader({ label: "Backstory", fieldKey: "backstory" })}
                 <Textarea
                   id="backstory"
                   value={form.backstory}
@@ -765,7 +1011,7 @@ function CreateOCForm() {
                 Enter two truths and one lie about your OC.
               </p>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="truth1">Truth #1</Label>
+                {renderFieldHeader({ label: "Truth #1", fieldKey: "truth1" })}
                 <Input
                   id="truth1"
                   value={form.truth1}
@@ -774,7 +1020,7 @@ function CreateOCForm() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="truth2">Truth #2</Label>
+                {renderFieldHeader({ label: "Truth #2", fieldKey: "truth2" })}
                 <Input
                   id="truth2"
                   value={form.truth2}
@@ -783,7 +1029,7 @@ function CreateOCForm() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="lie">Lie</Label>
+                {renderFieldHeader({ label: "Lie", fieldKey: "lie" })}
                 <Input
                   id="lie"
                   value={form.lie}
@@ -801,7 +1047,7 @@ function CreateOCForm() {
                 A public post visible on their profile.
               </p>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="feed">Feed Content</Label>
+                {renderFieldHeader({ label: "Feed Content", fieldKey: "openFeed" })}
                 <Textarea
                   id="feed"
                   value={form.openFeed}
@@ -814,8 +1060,9 @@ function CreateOCForm() {
           )}
 
           {step === 6 && (
-            <div className="flex flex-col gap-4">
-              <h2 className="text-lg font-semibold">Profile Image</h2>
+            <div className="flex flex-col gap-6">
+              <h2 className="text-lg font-semibold">Profile Image & Badges</h2>
+
               <div className="flex flex-col items-center gap-4">
                 <div className="relative flex size-40 items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted">
                   {form.imageUrl ? (
@@ -844,57 +1091,58 @@ function CreateOCForm() {
                   className="sr-only"
                 />
               </div>
-            </div>
-          )}
 
-          {step === 7 && (
-            <div className="flex flex-col gap-4">
-              <h2 className="text-lg font-semibold">Visibility & Badges</h2>
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div className="flex flex-col gap-2">
-                  <Label>Visible Fields</Label>
-                  <FieldVisibilityToggle
-                    fields={[
-                      { fieldKey: "species", label: "Species", visible: form.fieldVisibility.species },
-                      { fieldKey: "gender", label: "Gender", visible: form.fieldVisibility.gender },
-                      {
-                        fieldKey: "sexual_orientation",
-                        label: "Sexual Orientation",
-                        visible: form.fieldVisibility.sexual_orientation,
-                      },
-                      {
-                        fieldKey: "romantic_orientation",
-                        label: "Romantic Orientation",
-                        visible: form.fieldVisibility.romantic_orientation,
-                      },
-                      { fieldKey: "age", label: "Age", visible: form.fieldVisibility.age },
-                      { fieldKey: "height_inches", label: "Height", visible: form.fieldVisibility.height_inches },
-                      { fieldKey: "personality", label: "Personality", visible: form.fieldVisibility.personality },
-                      { fieldKey: "likes", label: "Likes", visible: form.fieldVisibility.likes },
-                      { fieldKey: "dislikes", label: "Dislikes", visible: form.fieldVisibility.dislikes },
-                      { fieldKey: "appearance", label: "Appearance", visible: form.fieldVisibility.appearance },
-                      { fieldKey: "occupation", label: "Occupation", visible: form.fieldVisibility.occupation },
-                      { fieldKey: "homeworld", label: "Homeworld", visible: form.fieldVisibility.homeworld },
-                      { fieldKey: "backstory", label: "Backstory", visible: form.fieldVisibility.backstory },
-                    ]}
-                    onChange={(fields) =>
-                      update(
-                        "fieldVisibility",
-                        fields.reduce(
-                          (acc, f) => {
-                            acc[f.fieldKey] = f.visible;
-                            return acc;
-                          },
-                          { ...form.fieldVisibility }
-                        )
-                      )
-                    }
-                  />
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Label>Gallery Images</Label>
+                  <span className="text-xs text-muted-foreground">
+                    {form.galleryImages.length}/3 (max 2MB each)
+                  </span>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <Label>Badges</Label>
-                  <BadgeSelector selected={form.badges} onChange={(badges) => update("badges", badges)} />
+                <div className="grid grid-cols-3 gap-3">
+                  {form.galleryImages.map((item, index) => (
+                    <div
+                      key={index}
+                      className="relative aspect-square overflow-hidden rounded-xl border border-border bg-muted"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.preview}
+                        alt={`Gallery ${index + 1}`}
+                        className="size-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryImage(index)}
+                        className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-destructive"
+                        aria-label={`Remove gallery image ${index + 1}`}
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  {form.galleryImages.length < 3 && (
+                    <Label
+                      htmlFor="gallery-upload"
+                      className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                    >
+                      <Upload className="size-6" />
+                      <span className="text-xs">Add Image</span>
+                    </Label>
+                  )}
                 </div>
+                <input
+                  id="gallery-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleGalleryUpload}
+                  className="sr-only"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label>Badges</Label>
+                <BadgeSelector selected={form.badges} onChange={(badges) => update("badges", badges)} />
               </div>
             </div>
           )}

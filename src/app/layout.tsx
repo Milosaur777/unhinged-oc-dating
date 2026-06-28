@@ -18,6 +18,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Unhinged - OC Dating Platform",
   description: "Match with original characters. Swipe, chat, and connect.",
+  icons: {
+    icon: "/icon.avif",
+    apple: "/icon.avif",
+  },
 };
 
 export const viewport: Viewport = {

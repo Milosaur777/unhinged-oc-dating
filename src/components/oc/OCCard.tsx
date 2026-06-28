@@ -8,16 +8,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { OCWithDetails } from "@/lib/supabase-queries";
 import { GuestOC } from "@/components/auth/AuthProvider";
-import { getPublicImageUrl, getInitials } from "@/lib/utils";
+import { cn, getPublicImageUrl, getInitials } from "@/lib/utils";
 
 interface OCCardProps {
   oc: OCWithDetails | GuestOC;
   onDelete?: () => void;
   draggable?: boolean;
   onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
   onDragOver?: (e: React.DragEvent) => void;
   onDrop?: (e: React.DragEvent) => void;
   showActions?: boolean;
+  isDragging?: boolean;
+  className?: string;
 }
 
 function getFieldValue(oc: OCWithDetails | GuestOC, key: string): string | null {
@@ -33,9 +36,12 @@ export function OCCard({
   onDelete,
   draggable,
   onDragStart,
+  onDragEnd,
   onDragOver,
   onDrop,
   showActions = true,
+  isDragging,
+  className,
 }: OCCardProps) {
   const imageUrl = getPublicImageUrl(oc.image_url);
   const species = getFieldValue(oc, "species");
@@ -47,9 +53,14 @@ export function OCCard({
     <Card
       draggable={draggable}
       onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
       onDragOver={onDragOver}
       onDrop={onDrop}
-      className="group/card relative overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 transition-all hover:ring-primary/50"
+      className={cn(
+        "group/card relative overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 transition-all hover:ring-primary/50",
+        isDragging && "z-50 scale-105 shadow-2xl ring-primary",
+        className
+      )}
     >
       {draggable && (
         <div className="absolute top-2 left-2 z-10 cursor-grab rounded-md bg-black/40 p-1 text-white active:cursor-grabbing">
