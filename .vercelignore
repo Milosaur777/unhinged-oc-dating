@@ -1,0 +1,5 @@
+_old-files
+.git
+.next
+node_modules
+*.log
