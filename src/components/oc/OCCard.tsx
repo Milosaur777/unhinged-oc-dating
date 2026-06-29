@@ -53,7 +53,7 @@ export function OCCard({
           className
         )}
       >
-        <Link href={`/oc/${oc.id}`} className="flex items-center gap-4 p-3">
+        <Link href={`/oc/${oc.id}`} className="flex items-center gap-3 p-2 md:gap-4 md:p-3">
           {draggable && (
             <div
               draggable
@@ -69,14 +69,14 @@ export function OCCard({
               <GripVertical className="size-4" />
             </div>
           )}
-          <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-muted">
+          <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-muted sm:size-16 md:size-20">
             {imageUrl ? (
               <Image
                 src={imageUrl}
                 alt={oc.name}
                 fill
                 className="object-cover transition-transform duration-300 group-hover/card:scale-105"
-                sizes="64px"
+                sizes="80px"
               />
             ) : (
               <div className="flex size-full items-center justify-center text-sm font-bold text-muted-foreground">
@@ -85,16 +85,16 @@ export function OCCard({
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-base font-bold">{oc.name}</h3>
-            <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+            <h3 className="text-sm font-bold md:text-base">{oc.name}</h3>
+            <div className="hidden flex-wrap items-center gap-1.5 text-xs text-muted-foreground md:flex">
               {species && <span>{species}</span>}
               {species && gender && <span>•</span>}
               {gender && <span>{gender}</span>}
               {(species || gender) && age && <span>•</span>}
               {age && <span>{age}</span>}
             </div>
-            <div className="mt-1.5 flex flex-wrap gap-1">
-              {oc.tags?.slice(0, 4).map((tag) => (
+            <div className="mt-1 hidden flex-wrap gap-1 sm:flex">
+              {oc.tags?.slice(0, 3).map((tag) => (
                 <Badge key={tag} variant="secondary" className="text-[10px]">
                   {tag}
                 </Badge>
@@ -111,10 +111,10 @@ export function OCCard({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1 border-green-500/30 text-green-500 hover:bg-green-500/10 hover:text-green-400"
+                  className="gap-1 border-green-500/30 px-2 text-green-500 hover:bg-green-500/10 hover:text-green-400 md:px-3"
                 >
                   <Pencil className="size-3.5" />
-                  Edit
+                  <span className="hidden sm:inline">Edit</span>
                 </Button>
               </Link>
               {onDelete && (

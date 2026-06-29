@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { X, Heart, Flame, Info } from "lucide-react";
+import { X, Heart, Flame, Info, Search, Frown, RotateCcw } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import { Badge } from "@/components/ui/badge";
+import { OCCard } from "@/components/oc/OCCard";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
   getSwipeCandidates,
@@ -17,8 +19,10 @@ import {
   createChatSession,
   OCWithDetails,
   getUserOCs,
+  resetSwipes,
+  getPublicOCs,
 } from "@/lib/supabase-queries";
-import { getPublicImageUrl, getInitials } from "@/lib/utils";
+import { getPublicImageUrl, getInitials, cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const SWIPE_THRESHOLD = 100;
@@ -35,12 +39,15 @@ export default function SwipePage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dataLoading, setDataLoading] = useState(true);
   const [myOcIds, setMyOcIds] = useState<string[]>([]);
+  const [resetting, setResetting] = useState(false);
   const suppressTapRef = useRef(false);
+
+  const isDev = process.env.NODE_ENV === "development";
 
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.push("/auth");
+      router.push("/");
       return;
     }
     if (isGuest) return;
@@ -67,6 +74,27 @@ export default function SwipePage() {
 
   const current = candidates[currentIndex];
 
+  async function refreshCandidates() {
+    if (myOcIds.length === 0 || !user) return;
+    const fresh = await getSwipeCandidates(myOcIds, user.id);
+    setCandidates(fresh);
+    setCurrentIndex(0);
+  }
+
+  async function handleResetSwipes() {
+    if (!user || resetting) return;
+    setResetting(true);
+    try {
+      await resetSwipes(user.id);
+      await refreshCandidates();
+      toast.success("Swipes reset");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to reset swipes");
+    } finally {
+      setResetting(false);
+    }
+  }
+
   function handleResult(action: "like" | "pass") {
     if (!current || myOcIds.length === 0) return;
 
@@ -87,6 +115,10 @@ export default function SwipePage() {
       }
       setCurrentIndex((i) => i + 1);
     });
+  }
+
+  function scrollToMatches() {
+    document.getElementById("matches")?.scrollIntoView({ behavior: "smooth" });
   }
 
   if (loading) {
@@ -128,58 +160,159 @@ export default function SwipePage() {
   return (
     <>
       <DashboardHeader />
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 py-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Swipe</h1>
-          <p className="text-sm text-muted-foreground">
-            {currentIndex + 1} / {candidates.length}
-          </p>
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-6">
+        <div className="mx-auto w-full max-w-md">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold">Swipe</h1>
+              {isDev && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResetSwipes}
+                  disabled={resetting}
+                  className="gap-1.5"
+                >
+                  <RotateCcw className="size-3.5" />
+                  Reset Swipes
+                </Button>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {currentIndex + 1} / {candidates.length}
+            </p>
+          </div>
+
+          {candidates.length === 0 || currentIndex >= candidates.length ? (
+            <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+              <Flame className="size-12 text-muted-foreground" />
+              <h2 className="text-xl font-semibold">No more cards</h2>
+              <p className="text-sm text-muted-foreground">
+                Check back later or browse all matches.
+              </p>
+              <Button variant="outline" onClick={scrollToMatches}>
+                Browse Matches
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="relative mt-6 flex h-[60vh] flex-col">
+                <SwipeCard
+                  key={current.id}
+                  oc={current}
+                  onResult={handleResult}
+                  suppressTapRef={suppressTapRef}
+                />
+              </div>
+              <div className="mt-6 flex items-center justify-center gap-4 pb-6">
+                <Button
+                  variant="outline"
+                  size="icon-lg"
+                  onClick={() => handleResult("pass")}
+                  className="rounded-full border-destructive text-destructive hover:bg-destructive/10"
+                  aria-label="Pass"
+                >
+                  <X className="size-6" />
+                </Button>
+                <Button
+                  size="icon-lg"
+                  onClick={() => handleResult("like")}
+                  className="rounded-full shadow-[0_0_20px_rgba(255,45,123,0.4)]"
+                  aria-label="Like"
+                >
+                  <Heart className="size-6" />
+                </Button>
+              </div>
+              <div className="flex justify-center pb-6">
+                <Button variant="ghost" size="sm" onClick={scrollToMatches}>
+                  Browse matches below
+                </Button>
+              </div>
+            </>
+          )}
         </div>
 
-        {candidates.length === 0 || currentIndex >= candidates.length ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-            <Flame className="size-12 text-muted-foreground" />
-            <h2 className="text-xl font-semibold">No more cards</h2>
-            <p className="text-sm text-muted-foreground">
-              Check back later or browse all matches.
-            </p>
-            <Link href="/matches">
-              <Button variant="outline">Browse Matches</Button>
-            </Link>
-          </div>
-        ) : (
-          <>
-            <div className="relative mt-6 flex flex-1 flex-col">
-              <SwipeCard
-                key={current.id}
-                oc={current}
-                onResult={handleResult}
-                suppressTapRef={suppressTapRef}
-              />
-            </div>
-            <div className="mt-6 flex items-center justify-center gap-4 pb-6">
-              <Button
-                variant="outline"
-                size="icon-lg"
-                onClick={() => handleResult("pass")}
-                className="rounded-full border-destructive text-destructive hover:bg-destructive/10"
-                aria-label="Pass"
-              >
-                <X className="size-6" />
-              </Button>
-              <Button
-                size="icon-lg"
-                onClick={() => handleResult("like")}
-                className="rounded-full"
-                aria-label="Like"
-              >
-                <Heart className="size-6" />
-              </Button>
-            </div>
-          </>
-        )}
+        <section id="matches" className="mt-6 border-t border-border pt-8">
+          <MatchesSection userId={user.id} />
+        </section>
       </main>
     </>
+  );
+}
+
+function MatchesSection({ userId }: { userId: string }) {
+  const [ocs, setOcs] = useState<OCWithDetails[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const data = await getPublicOCs(userId);
+        if (!cancelled) setOcs(data);
+      } catch (err) {
+        if (!cancelled) {
+          toast.error(err instanceof Error ? err.message : "Failed to load matches");
+        }
+      } finally {
+        if (!cancelled) setDataLoading(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return ocs;
+    return ocs.filter((oc) => {
+      const matchesName = oc.name.toLowerCase().includes(q);
+      const matchesId = oc.id.toLowerCase().includes(q);
+      const matchesTag = oc.tags?.some((t) => t.toLowerCase().includes(q));
+      return matchesName || matchesId || matchesTag;
+    });
+  }, [ocs, query]);
+
+  return (
+    <div className="flex flex-col gap-6 px-2 md:px-4">
+      <div className="flex flex-col gap-4">
+        <h2 className="text-2xl font-bold">Your Matches</h2>
+        <div className="relative max-w-md">
+          <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by Name / ID / Tag..."
+            className="pl-9"
+          />
+        </div>
+      </div>
+
+      {dataLoading ? (
+        <div className="text-sm text-muted-foreground">Loading matches...</div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-card/50 py-16">
+          <Frown className="size-10 text-muted-foreground" />
+          <p className="text-muted-foreground">No matches found.</p>
+          {query ? (
+            <Button variant="outline" onClick={() => setQuery("")}>
+              Clear filters
+            </Button>
+          ) : null}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {filtered.map((oc) => (
+            <Link key={oc.id} href={`/oc/${oc.id}`}>
+              <OCCard oc={oc} showActions={false} />
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Plus,
   Frown,
@@ -13,12 +12,12 @@ import {
   Heart,
   MessageCircle,
   Eye,
-  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import { ChatSidebar } from "@/components/chat/ChatSidebar";
 import { OCCard } from "@/components/oc/OCCard";
+import { LoginCard } from "@/components/auth/LoginCard";
 import {
   Dialog,
   DialogContent,
@@ -72,7 +71,6 @@ function getFieldValue(oc: OCWithDetails, key: string): string | null {
 }
 
 export default function DashboardPage() {
-  const router = useRouter();
   const { user, isGuest, loading, guestOCs, deleteGuestOC } = useAuth();
   const [ocs, setOcs] = useState<OCWithDetails[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -85,8 +83,6 @@ export default function DashboardPage() {
   const [view, setView] = useState<ViewMode>("grid");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [ageFilter, setAgeFilter] = useState<string>("all");
-  const [speciesFilter, setSpeciesFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState<string>("all");
   const [stats, setStats] = useState({ totalLikes: 0, matches: 0 });
   const gridRef = useRef<HTMLDivElement>(null);
@@ -97,11 +93,7 @@ export default function DashboardPage() {
   }, [search]);
 
   useEffect(() => {
-    if (loading) return;
-    if (!user) {
-      router.push("/auth");
-      return;
-    }
+    if (loading || !user) return;
     if (isGuest) return;
 
     async function load() {
@@ -132,7 +124,7 @@ export default function DashboardPage() {
       }
     }
     load();
-  }, [user, isGuest, loading, router]);
+  }, [user, isGuest, loading]);
 
   const guestMapped = useMemo(
     () =>
@@ -154,21 +146,13 @@ export default function DashboardPage() {
 
   const filterOptions = useMemo(() => {
     const source = isGuest ? guestMapped : ocs;
-    const ages = new Set<string>();
-    const species = new Set<string>();
     const tags = new Set<string>();
 
     source.forEach((oc) => {
-      const age = getFieldValue(oc, "age");
-      const spec = getFieldValue(oc, "species");
-      if (age) ages.add(age);
-      if (spec) species.add(spec);
       oc.tags?.forEach((t) => tags.add(t));
     });
 
     return {
-      ages: Array.from(ages).sort(),
-      species: Array.from(species).sort(),
       tags: Array.from(tags).sort(),
     };
   }, [isGuest, guestMapped, ocs]);
@@ -177,12 +161,10 @@ export default function DashboardPage() {
     const source = isGuest ? guestMapped : ocs;
     return source.filter((oc) => {
       if (debouncedSearch && !oc.name.toLowerCase().includes(debouncedSearch)) return false;
-      if (ageFilter !== "all" && getFieldValue(oc, "age") !== ageFilter) return false;
-      if (speciesFilter !== "all" && getFieldValue(oc, "species") !== speciesFilter) return false;
       if (tagFilter !== "all" && !oc.tags?.includes(tagFilter)) return false;
       return true;
     });
-  }, [isGuest, guestMapped, ocs, debouncedSearch, ageFilter, speciesFilter, tagFilter]);
+  }, [isGuest, guestMapped, ocs, debouncedSearch, tagFilter]);
 
   const displayOcs = useMemo(() => {
     switch (sort) {
@@ -206,7 +188,7 @@ export default function DashboardPage() {
   }, [filteredOcs, sort]);
 
   const isCustomSort = sort === "custom";
-  const hasActiveFilters = debouncedSearch !== "" || ageFilter !== "all" || speciesFilter !== "all" || tagFilter !== "all";
+  const hasActiveFilters = debouncedSearch !== "" || tagFilter !== "all";
   const canReorder = isCustomSort && !hasActiveFilters;
   const deleteFirstName = useMemo(
     () => deleteTarget?.name.split(" ")[0] ?? "",
@@ -305,16 +287,15 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <>
-        <DashboardHeader />
-        <main className="mx-auto flex w-full max-w-7xl flex-1 items-center justify-center px-4">
-          <div className="text-muted-foreground">Loading...</div>
-        </main>
-      </>
+      <main className="flex min-h-screen items-center justify-center px-4">
+        <div className="text-muted-foreground">Loading...</div>
+      </main>
     );
   }
 
-  if (!user) return null;
+  if (!user) {
+    return <LoginCard />;
+  }
 
   if (dataLoading && !isGuest) {
     return (
@@ -338,7 +319,7 @@ export default function DashboardPage() {
           {/* Creator banner */}
           <div
             className={cn(
-              "relative h-40 w-full overflow-hidden bg-gradient-to-r from-primary/30 via-accent/20 to-background md:h-56",
+              "relative h-40 w-full overflow-hidden banner-gradient md:h-56",
               headerUrl && "bg-none"
             )}
           >
@@ -363,21 +344,24 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="flex flex-1 flex-col gap-6 px-4 py-6 md:px-6">
+          <div className="flex flex-1 flex-col gap-6 px-6 py-6 md:px-8 lg:px-10">
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <StatCard
-                icon={Users}
-                label="Total OCs"
-                value={isGuest ? guestMapped.length : ocs.length}
-              />
-              <StatCard icon={Heart} label="Total Likes" value={isGuest ? 0 : stats.totalLikes} />
-              <StatCard
-                icon={MessageCircle}
-                label="Matches"
-                value={isGuest ? 0 : stats.matches}
-              />
-              <StatCard icon={Eye} label="Profile Views" value={0} />
+            <div className="relative max-w-2xl">
+              <div className="absolute -inset-4 rounded-3xl bg-primary/10 blur-3xl" aria-hidden="true" />
+              <div className="relative grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <StatCard
+                  icon={Users}
+                  label="Total OCs"
+                  value={isGuest ? guestMapped.length : ocs.length}
+                />
+                <StatCard icon={Heart} label="Total Likes" value={isGuest ? 0 : stats.totalLikes} />
+                <StatCard
+                  icon={MessageCircle}
+                  label="Matches"
+                  value={isGuest ? 0 : stats.matches}
+                />
+                <StatCard icon={Eye} label="Profile Views" value={0} />
+              </div>
             </div>
 
             {/* Toolbar */}
@@ -392,18 +376,6 @@ export default function DashboardPage() {
                     className="pl-9"
                   />
                 </div>
-                <FilterSelect
-                  value={ageFilter}
-                  onChange={(v) => setAgeFilter(v || "all")}
-                  options={filterOptions.ages}
-                  placeholder="Age"
-                />
-                <FilterSelect
-                  value={speciesFilter}
-                  onChange={(v) => setSpeciesFilter(v || "all")}
-                  options={filterOptions.species}
-                  placeholder="Species"
-                />
                 <FilterSelect
                   value={tagFilter}
                   onChange={(v) => setTagFilter(v || "all")}
@@ -443,7 +415,7 @@ export default function DashboardPage() {
                   </Button>
                 </div>
                 <Link href="/create" className="shrink-0">
-                  <Button className="gap-2">
+                  <Button className="gap-2 shadow-[0_0_16px_rgba(255,45,123,0.35)]">
                     <Plus className="size-4" />
                     <span className="hidden sm:inline">Create OC</span>
                     <span className="sm:hidden">New</span>
@@ -469,8 +441,8 @@ export default function DashboardPage() {
                 className={cn(
                   "relative",
                   view === "grid"
-                    ? "grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-                    : "flex flex-col gap-3"
+                    ? "grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+                    : "flex flex-col gap-4"
                 )}
               >
                 {(() => {
@@ -522,24 +494,6 @@ export default function DashboardPage() {
                 })()}
               </div>
             )}
-
-            {/* Support card */}
-            <div className="rounded-2xl border border-border bg-card p-6 text-center ring-1 ring-foreground/10">
-              <p className="text-sm text-muted-foreground">
-                Do you like the app? Support it here to help keep it running.
-              </p>
-              <a
-                href="https://ko-fi.com/unhinged"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center gap-2"
-              >
-                <Button variant="outline" className="gap-2">
-                  <ExternalLink className="size-4" />
-                  Support on Ko-Fi
-                </Button>
-              </a>
-            </div>
           </div>
         </main>
       </div>
@@ -585,8 +539,8 @@ function StatCard({
   value: number;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 ring-1 ring-foreground/10">
-      <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
+    <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-card/60 p-4 shadow-[0_0_20px_rgba(255,45,123,0.15)] backdrop-blur-md ring-1 ring-white/5">
+      <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
         <Icon className="size-5 text-primary" />
       </div>
       <div>

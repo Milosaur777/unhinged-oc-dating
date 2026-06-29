@@ -223,6 +223,21 @@ export async function recordSwipe(fromOcId: string, toOcId: string, action: "lik
   if (error) throw error;
 }
 
+export async function resetSwipes(userId: string) {
+  const supabase = getClient();
+  const { data: ocs, error: ocsError } = await supabase
+    .from("ocs")
+    .select("id")
+    .eq("user_id", userId);
+  if (ocsError) throw ocsError;
+
+  const ids = ocs?.map((o) => o.id) ?? [];
+  if (ids.length === 0) return;
+
+  const { error } = await supabase.from("swipe_actions").delete().in("from_oc_id", ids);
+  if (error) throw error;
+}
+
 export async function checkMutualLike(fromOcId: string, toOcId: string): Promise<boolean> {
   const supabase = getClient();
   const { data, error } = await supabase

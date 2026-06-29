@@ -14,6 +14,9 @@ import {
   User,
   Bell,
   ChevronDown,
+  Settings,
+  ExternalLink,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -23,14 +26,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { getIncomingLikes } from "@/lib/supabase-queries";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const navLinks = [
   { href: "/", label: "Dashboard", icon: Home },
   { href: "/swipe", label: "Swipe", icon: Flame },
-  { href: "/matches", label: "Matches", icon: Heart },
   { href: "/chat", label: "Chat", icon: MessageCircle },
   { href: "/likes", label: "Likes", icon: Heart },
 ];
@@ -66,7 +74,7 @@ export function DashboardHeader() {
 
   async function handleLogout() {
     await logout();
-    router.push("/auth");
+    router.push("/");
   }
 
   return (
@@ -80,7 +88,9 @@ export function DashboardHeader() {
             height={24}
             className="size-6 object-contain"
           />
-          <span className="hidden md:inline">Unhinged</span>
+          <span className="hidden bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent md:inline">
+            Unhinged
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
@@ -89,8 +99,9 @@ export function DashboardHeader() {
               key={link.href}
               href={link.href}
               className={cn(
-                "relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-                pathname === link.href && "bg-muted text-foreground"
+                "relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
+                pathname === link.href &&
+                  "bg-muted text-foreground ring-1 ring-primary/50 shadow-[0_0_12px_rgba(255,45,123,0.25)]"
               )}
             >
               <link.icon className="size-4" />
@@ -105,17 +116,24 @@ export function DashboardHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="relative"
-            aria-label="Notifications"
-          >
-            <Bell className="size-4" />
-            {likesCount > 0 && (
-              <span className="absolute top-1 right-1 size-2 rounded-full bg-primary" />
-            )}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="relative"
+                  aria-label="Notifications"
+                >
+                  <Bell className="size-4" />
+                  {likesCount > 0 && (
+                    <span className="absolute top-1 right-1 size-2 rounded-full bg-primary shadow-[0_0_8px_rgba(255,45,123,0.8)]" />
+                  )}
+                </Button>
+              }
+            />
+            <TooltipContent side="bottom">Updates &amp; announcements coming soon</TooltipContent>
+          </Tooltip>
 
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -124,7 +142,8 @@ export function DashboardHeader() {
                   variant="ghost"
                   className={cn(
                     "hidden items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex",
-                    pathname === "/creator" && "bg-muted text-foreground"
+                    pathname === "/creator" &&
+                      "bg-muted text-foreground ring-1 ring-primary/50 shadow-[0_0_12px_rgba(255,45,123,0.25)]"
                   )}
                 >
                   <User className="size-4" />
@@ -133,7 +152,7 @@ export function DashboardHeader() {
                 </Button>
               }
             />
-            <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem
                 render={
                   <Link href="/creator" className="cursor-pointer">
@@ -142,9 +161,21 @@ export function DashboardHeader() {
                   </Link>
                 }
               />
-              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                <LogOut className="mr-2 size-4" />
-                Log out
+              <DropdownMenuItem
+                render={
+                  <Link href="/creator" className="cursor-pointer">
+                    <Settings className="mr-2 size-4" />
+                    Settings
+                  </Link>
+                }
+              />
+              <DropdownMenuItem
+                disabled
+                className="cursor-not-allowed"
+                onClick={() => toast.info("Account switching is coming soon")}
+              >
+                <Users className="mr-2 size-4" />
+                Switch Account
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -176,9 +207,9 @@ export function DashboardHeader() {
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
-                      "flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      "flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
                       pathname === link.href
-                        ? "bg-primary/10 text-primary"
+                        ? "bg-primary/10 text-primary ring-1 ring-primary/30 shadow-[0_0_12px_rgba(255,45,123,0.2)]"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground"
                     )}
                   >
@@ -197,15 +228,25 @@ export function DashboardHeader() {
                   href="/creator"
                   onClick={() => setMobileOpen(false)}
                   className={cn(
-                    "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
                     pathname === "/creator"
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-primary/10 text-primary ring-1 ring-primary/30 shadow-[0_0_12px_rgba(255,45,123,0.2)]"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )}
                 >
                   <User className="size-4" />
                   Creator
                 </Link>
+                <a
+                  href="https://ko-fi.com/unhinged"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <ExternalLink className="size-4" />
+                  Support Unhinged
+                </a>
                 <Button
                   variant="outline"
                   className="mt-4 justify-start gap-2"

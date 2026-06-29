@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { PanelLeftClose, PanelLeftOpen, MessageCircle } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, MessageCircle, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -82,6 +82,27 @@ export function ChatSidebar() {
           </div>
         )}
       </ScrollArea>
+
+      {!collapsed && (
+        <div className="border-t border-border p-3">
+          <div className="rounded-xl border border-white/10 bg-card/60 p-4 shadow-[0_0_20px_rgba(255,45,123,0.12)] backdrop-blur-md ring-1 ring-white/5">
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Do you like the app? Support it to help keep it running.
+            </p>
+            <a
+              href="https://ko-fi.com/unhinged"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex w-full"
+            >
+              <Button variant="outline" size="sm" className="w-full gap-2">
+                <ExternalLink className="size-3.5" />
+                Support on Ko-Fi
+              </Button>
+            </a>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
