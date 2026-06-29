@@ -355,41 +355,43 @@ export default function DashboardPage() {
                 <div className="absolute inset-0 bg-gradient-to-r from-background from-[30%] via-background/50 via-[60%] to-transparent" />
               </>
             )}
-            <div className="absolute inset-x-0 bottom-0 px-4 py-4 md:px-6 md:py-5">
-              <h1 className="inline-flex items-center gap-2 text-4xl font-extrabold lg:text-5xl">
-                <span className="bg-gradient-to-r from-primary via-pink-400 to-purple-400 bg-clip-text text-transparent">
-                  Your OCs
-                </span>
-              </h1>
-              <p className="text-sm text-muted-foreground/80">
-                {isGuest
-                  ? "Guest mode — your OCs are stored locally."
-                  : "Manage, reorder, and preview your characters."}
-              </p>
+            <div className="absolute inset-0 flex flex-col justify-between px-4 py-4 md:px-6 md:py-5">
+              <div>
+                <h1 className="inline-flex items-center gap-2 text-4xl font-extrabold lg:text-5xl">
+                  <span className="bg-gradient-to-r from-primary via-pink-400 to-purple-400 bg-clip-text text-transparent">
+                    Your OCs
+                  </span>
+                </h1>
+                <p className="text-sm text-muted-foreground/80">
+                  {isGuest
+                    ? "Guest mode — your OCs are stored locally."
+                    : "Manage, reorder, and preview your characters."}
+                </p>
+              </div>
+
+              {/* Stats */}
+              <div className="relative w-full max-w-2xl">
+                <div className="absolute -inset-4 rounded-3xl bg-primary/10 blur-3xl" aria-hidden="true" />
+                <div className="relative grid grid-cols-4 gap-2 sm:gap-3">
+                  <StatCard
+                    icon={Users}
+                    label="Total OCs"
+                    value={isGuest ? guestMapped.length : ocs.length}
+                  />
+                  <StatCard icon={Heart} label="Total Likes" value={isGuest ? 0 : stats.totalLikes} variant="pink" />
+                  <StatCard
+                    icon={MessageCircle}
+                    label="Matches"
+                    value={isGuest ? 0 : stats.matches}
+                    variant="blue"
+                  />
+                  <StatCard icon={Eye} label="Profile Views" value={0} variant="purple" />
+                </div>
+              </div>
             </div>
           </div>
 
           <div className="flex flex-1 flex-col gap-6 px-4 py-6 md:px-6">
-            {/* Stats */}
-            <div className="relative w-full max-w-2xl">
-              <div className="absolute -inset-4 rounded-3xl bg-primary/10 blur-3xl" aria-hidden="true" />
-              <div className="relative grid grid-cols-4 gap-2 sm:gap-3">
-                <StatCard
-                  icon={Users}
-                  label="Total OCs"
-                  value={isGuest ? guestMapped.length : ocs.length}
-                />
-                <StatCard icon={Heart} label="Total Likes" value={isGuest ? 0 : stats.totalLikes} variant="pink" />
-                <StatCard
-                  icon={MessageCircle}
-                  label="Matches"
-                  value={isGuest ? 0 : stats.matches}
-                  variant="blue"
-                />
-                <StatCard icon={Eye} label="Profile Views" value={0} variant="purple" />
-              </div>
-            </div>
-
             {/* Toolbar */}
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -465,10 +467,10 @@ export default function DashboardPage() {
                 onDragOver={handleContainerDragOver}
                 onDrop={handleContainerDrop}
                 className={cn(
-                  "relative",
+                  "relative grid gap-5",
                   view === "grid"
-                    ? "grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-                    : "flex flex-col gap-4"
+                    ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+                    : "grid-cols-1 md:grid-cols-2"
                 )}
               >
                 {view === "grid" ? (
@@ -564,11 +566,12 @@ export default function DashboardPage() {
 
 type StatVariant = "default" | "pink" | "blue" | "purple";
 
-const STAT_VARIANTS: Record<StatVariant, { bg: string; icon: string; iconColor: string; glow: string; hoverGlow: string; hoverBorder: string }> = {
+const STAT_VARIANTS: Record<StatVariant, { bg: string; icon: string; iconColor: string; cardBg: string; glow: string; hoverGlow: string; hoverBorder: string }> = {
   default: {
     bg: "bg-primary/10",
     icon: "text-primary",
     iconColor: "text-primary",
+    cardBg: "bg-white/5",
     glow: "shadow-[0_0_20px_rgba(255,45,123,0.12)]",
     hoverGlow: "hover:shadow-[0_0_28px_rgba(255,45,123,0.25)]",
     hoverBorder: "hover:border-primary/20",
@@ -577,6 +580,7 @@ const STAT_VARIANTS: Record<StatVariant, { bg: string; icon: string; iconColor: 
     bg: "bg-pink-500/10",
     icon: "text-pink-400",
     iconColor: "text-pink-400",
+    cardBg: "bg-pink-500/[0.07]",
     glow: "shadow-[0_0_20px_rgba(236,72,153,0.12)]",
     hoverGlow: "hover:shadow-[0_0_28px_rgba(236,72,153,0.25)]",
     hoverBorder: "hover:border-pink-500/20",
@@ -585,6 +589,7 @@ const STAT_VARIANTS: Record<StatVariant, { bg: string; icon: string; iconColor: 
     bg: "bg-blue-500/10",
     icon: "text-blue-400",
     iconColor: "text-blue-400",
+    cardBg: "bg-blue-500/[0.07]",
     glow: "shadow-[0_0_20px_rgba(59,130,246,0.12)]",
     hoverGlow: "hover:shadow-[0_0_28px_rgba(59,130,246,0.25)]",
     hoverBorder: "hover:border-blue-500/20",
@@ -593,6 +598,7 @@ const STAT_VARIANTS: Record<StatVariant, { bg: string; icon: string; iconColor: 
     bg: "bg-purple-500/10",
     icon: "text-purple-400",
     iconColor: "text-purple-400",
+    cardBg: "bg-purple-500/[0.07]",
     glow: "shadow-[0_0_20px_rgba(168,85,247,0.12)]",
     hoverGlow: "hover:shadow-[0_0_28px_rgba(168,85,247,0.25)]",
     hoverBorder: "hover:border-purple-500/20",
@@ -614,7 +620,8 @@ function StatCard({
   return (
     <div
       className={cn(
-        "group flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-2 backdrop-blur-xl ring-1 ring-white/5 transition-all duration-300 ease-out hover:scale-[1.02] sm:gap-3 sm:p-4",
+        "group flex items-center gap-2 rounded-xl border border-white/10 p-2 backdrop-blur-xl ring-1 ring-white/5 transition-all duration-300 ease-out hover:scale-[1.02] sm:gap-3 sm:p-4",
+        style.cardBg,
         style.glow,
         style.hoverGlow,
         style.hoverBorder

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Pencil, Trash2, GripVertical } from "lucide-react";
+import { Pencil, Trash2, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TagPillList } from "@/components/ui/TagPill";
@@ -59,7 +59,6 @@ export function OCCard({
               draggable
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
-              onPointerDown={(e) => e.stopPropagation()}
               className="drag-handle shrink-0 cursor-grab rounded-md p-1 text-muted-foreground transition-colors hover:bg-white/10 active:cursor-grabbing"
               aria-label="Drag to reorder"
               onClick={(e) => {
@@ -67,7 +66,7 @@ export function OCCard({
                 e.stopPropagation();
               }}
             >
-              <GripVertical className="size-4" />
+              <MoreVertical className="size-4" />
             </div>
           )}
           <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-zinc-900 sm:size-16 md:size-20">
@@ -138,27 +137,26 @@ export function OCCard({
   return (
     <div
       className={cn(
-        "group/card flex h-full flex-col overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-b from-zinc-950/60 to-zinc-950/30 ring-1 ring-white/5 backdrop-blur-sm transition-all duration-300 ease-out hover:border-primary/50 hover:shadow-[0_0_24px_rgba(255,45,123,0.25)]",
+        "group/card relative flex h-full flex-col overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-b from-zinc-950/60 to-zinc-950/30 ring-1 ring-white/5 backdrop-blur-sm transition-all duration-300 ease-out hover:border-primary/50 hover:shadow-[0_0_24px_rgba(255,45,123,0.25)]",
         className
       )}
     >
+      {draggable && (
+        <div
+          draggable
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          className="drag-handle absolute top-2 right-2 z-20 cursor-grab rounded-md bg-black/50 p-1 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 active:cursor-grabbing"
+          aria-label="Drag to reorder"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          <MoreVertical className="size-4" />
+        </div>
+      )}
       <Link href={`/oc/${oc.id}`} className="relative flex-1 overflow-hidden rounded-t-xl bg-zinc-900">
-        {draggable && (
-          <div
-            draggable
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="drag-handle absolute top-2 left-2 z-20 cursor-grab rounded-md bg-black/50 p-1 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 active:cursor-grabbing"
-            aria-label="Drag to reorder"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          >
-            <GripVertical className="size-4" />
-          </div>
-        )}
         {imageUrl ? (
           <Image
             src={imageUrl}

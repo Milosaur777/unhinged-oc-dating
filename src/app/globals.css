@@ -181,6 +181,24 @@
   background: var(--banner-gradient);
 }
 
+/* Animated light beam for active nav items */
+@keyframes light-beam {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-light-beam {
+  animation: light-beam 2.5s ease-in-out infinite;
+}
+
+.active-glow {
+  box-shadow: 0 0 16px rgba(255, 45, 123, 0.35), inset 0 0 12px rgba(255, 45, 123, 0.15);
+}
+
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 8px rgba(255, 45, 123, 0.3); transform: scale(1); }
   50% { box-shadow: 0 0 20px rgba(255, 45, 123, 0.6); transform: scale(1.05); }

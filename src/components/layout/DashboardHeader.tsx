@@ -97,31 +97,35 @@ export function DashboardHeader() {
     <>
       {/* Desktop: sticky top bar */}
       <header className="sticky top-0 z-40 hidden border-b border-white/10 bg-background/95 backdrop-blur-sm md:block">
-        <div className="mx-auto flex h-14 max-w-7xl items-center px-4">
-          <Link href="/" className="flex items-center gap-2 pr-4 text-lg font-bold text-foreground">
+        <div className="flex h-14 w-full items-center px-2.5">
+          <Link href="/" className="flex shrink-0 items-center text-lg font-bold text-foreground">
             <Image
               src="/icon.avif"
               alt="Unhinged"
-              width={36}
-              height={36}
-              className="size-9 object-contain"
+              width={40}
+              height={40}
+              className="size-10 object-contain"
             />
           </Link>
 
-          <nav className="flex items-center gap-0.5">
+          <nav className="absolute left-1/2 flex -translate-x-1/2 items-center gap-0.5">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "relative flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:text-foreground",
+                  "relative flex items-center gap-1.5 overflow-hidden rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:text-foreground",
                   pathname === link.href
-                    ? "bg-white/10 text-foreground shadow-[0_0_12px_rgba(255,45,123,0.2)]"
-                    : "hover:bg-white/5"
+                    ? "bg-white/10 text-foreground"
+                    : "hover:bg-white/5",
+                  pathname === link.href && link.href === "/" && "active-glow"
                 )}
               >
-                <link.icon className="size-3.5" />
-                {link.label}
+                {pathname === link.href && link.href === "/" && (
+                  <span className="pointer-events-none absolute inset-0 animate-light-beam rounded-full bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+                )}
+                <link.icon className="relative z-10 size-3.5" />
+                <span className="relative z-10">{link.label}</span>
                 {link.href === "/likes" && likesCount > 0 && (
                   <span className="absolute -top-1 -right-0.5 flex size-3.5 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground">
                     {likesCount > 9 ? "9+" : likesCount}
@@ -131,17 +135,17 @@ export function DashboardHeader() {
             ))}
           </nav>
 
-          <div className="ml-auto flex items-center gap-0.5">
+          <div className="ml-auto flex items-center gap-1">
             <Tooltip>
               <TooltipTrigger
                 render={
                   <Button
                     variant="ghost"
-                    size="icon-xs"
+                    size="icon-sm"
                     className="relative rounded-full"
                     aria-label="Notifications"
                   >
-                    <Bell className="size-3.5" />
+                    <Bell className="size-4" />
                     {likesCount > 0 && (
                       <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(255,45,123,0.8)]" />
                     )}
@@ -157,14 +161,14 @@ export function DashboardHeader() {
                   <Button
                     variant="ghost"
                     className={cn(
-                      "flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
+                      "flex items-center gap-1 rounded-full px-1.5 py-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
                       pathname === "/creator" && "bg-white/10 text-foreground"
                     )}
                   >
-                    <Avatar size="sm" className="size-9">
+                    <Avatar size="sm" className="size-10">
                       <AvatarImage src={getPublicImageUrl(creatorAvatarUrl)} alt={creatorName || "Creator"} />
-                      <AvatarFallback className="text-[10px]">
-                        {creatorName ? getInitials(creatorName) : <User className="size-3.5" />}
+                      <AvatarFallback className="text-xs">
+                        {creatorName ? getInitials(creatorName) : <User className="size-4" />}
                       </AvatarFallback>
                     </Avatar>
                     <ChevronDown className="size-4 opacity-70" />
@@ -201,12 +205,12 @@ export function DashboardHeader() {
 
             <Button
               variant="ghost"
-              size="icon-xs"
+              size="icon-sm"
               onClick={handleLogout}
               className="rounded-full"
               aria-label="Log out"
             >
-              <LogOut className="size-3.5" />
+              <LogOut className="size-4" />
             </Button>
           </div>
         </div>
