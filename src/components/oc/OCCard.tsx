@@ -6,6 +6,7 @@ import { Pencil, Trash2, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { TagPillList } from "@/components/ui/TagPill";
 import { OCWithDetails } from "@/lib/supabase-queries";
 import { GuestOC } from "@/components/auth/AuthProvider";
 import { cn, getPublicImageUrl, getInitials } from "@/lib/utils";
@@ -93,12 +94,8 @@ export function OCCard({
               {(species || gender) && age && <span>•</span>}
               {age && <span>{age}</span>}
             </div>
-            <div className="mt-1 hidden flex-wrap gap-1 sm:flex">
-              {oc.tags?.slice(0, 3).map((tag) => (
-                <Badge key={tag} variant="secondary" className="text-[10px]">
-                  {tag}
-                </Badge>
-              ))}
+            <div className="mt-1 hidden sm:block">
+              <TagPillList tags={oc.tags} max={3} />
             </div>
           </div>
           {showActions && (
@@ -189,13 +186,7 @@ export function OCCard({
         </div>
       </Link>
       <CardContent className="flex flex-col gap-2 p-3">
-        <div className="flex flex-wrap gap-1">
-          {oc.tags?.slice(0, 3).map((tag) => (
-            <Badge key={tag} variant="secondary" className="text-[10px]">
-              {tag}
-            </Badge>
-          ))}
-        </div>
+        <TagPillList tags={oc.tags} max={3} />
         {showActions && (
           <div className="flex items-center gap-2">
             <Link href={`/create?edit=${oc.id}`} className="flex-1" onClick={(e) => e.stopPropagation()}>

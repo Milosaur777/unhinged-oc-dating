@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Copy, Pencil, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
-import { Badge } from "@/components/ui/badge";
+import { TagPillList } from "@/components/ui/TagPill";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { OCWithDetails, OCField } from "@/lib/supabase-queries";
@@ -24,7 +25,23 @@ function getField(oc: OCWithDetails, key: string): OCField | undefined {
 }
 
 export function OCProfile({ oc, isOwner, backToSwipe, fromOc }: OCProfileProps) {
+  const router = useRouter();
   const imageUrl = getPublicImageUrl(oc.image_url);
+
+  function handleBack(e: React.MouseEvent) {
+    e.preventDefault();
+    const saved = sessionStorage.getItem("unhinged_dashboard_scroll");
+    if (saved) {
+      const y = parseInt(saved, 10);
+      sessionStorage.removeItem("unhinged_dashboard_scroll");
+      router.push("/", { scroll: false });
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: y, behavior: "auto" });
+      });
+    } else {
+      router.push("/", { scroll: false });
+    }
+  }
 
   function copyId() {
     navigator.clipboard.writeText(oc.id);
@@ -35,15 +52,25 @@ export function OCProfile({ oc, isOwner, backToSwipe, fromOc }: OCProfileProps) 
     <>
       <DashboardHeader />
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6">
-        {backToSwipe && (
-          <Link
-            href={`/swipe?card=${backToSwipe}&oc=${fromOc || ""}`}
-            className="flex w-fit items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBack}
+            className="gap-1.5 pl-1 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
-            Back to Swipe
-          </Link>
-        )}
+            Back
+          </Button>
+          {backToSwipe && (
+            <Link
+              href={`/swipe?card=${backToSwipe}&oc=${fromOc || ""}`}
+              className="flex w-fit items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Back to Swipe
+            </Link>
+          )}
+        </div>
 
         <div className="flex flex-col gap-6 lg:flex-row">
           <div className="flex flex-col gap-4 lg:w-80">
@@ -63,13 +90,7 @@ export function OCProfile({ oc, isOwner, backToSwipe, fromOc }: OCProfileProps) 
                 </div>
               )}
             </div>
-            <div className="flex flex-wrap gap-2">
-              {oc.tags?.map((tag) => (
-                <Badge key={tag} variant="secondary">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
+            <TagPillList tags={oc.tags} max={8} />
             <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-3">
               <code className="flex-1 truncate text-xs text-muted-foreground">{oc.id}</code>
               <Button variant="ghost" size="icon-xs" onClick={copyId} aria-label="Copy OC ID">

@@ -9,7 +9,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
-import { Badge } from "@/components/ui/badge";
+import { TagPillList } from "@/components/ui/TagPill";
 import { OCCard } from "@/components/oc/OCCard";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
@@ -41,8 +41,6 @@ export default function SwipePage() {
   const [myOcIds, setMyOcIds] = useState<string[]>([]);
   const [resetting, setResetting] = useState(false);
   const suppressTapRef = useRef(false);
-
-  const isDev = process.env.NODE_ENV === "development";
 
   useEffect(() => {
     if (loading) return;
@@ -163,9 +161,32 @@ export default function SwipePage() {
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-6">
         <div className="mx-auto w-full max-w-md">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold">Swipe</h1>
-              {isDev && (
+            <h1 className="text-2xl font-bold">Swipe</h1>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResetSwipes}
+                disabled={resetting}
+                className="gap-1.5"
+              >
+                <RotateCcw className="size-3.5" />
+                Reset
+              </Button>
+              <p className="text-sm text-muted-foreground">
+                {currentIndex + 1} / {candidates.length}
+              </p>
+            </div>
+          </div>
+
+          {candidates.length === 0 || currentIndex >= candidates.length ? (
+            <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+              <Flame className="size-12 text-muted-foreground" />
+              <h2 className="text-xl font-semibold">No more cards</h2>
+              <p className="text-sm text-muted-foreground">
+                Check back later or browse all matches.
+              </p>
+              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -176,23 +197,10 @@ export default function SwipePage() {
                   <RotateCcw className="size-3.5" />
                   Reset Swipes
                 </Button>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {currentIndex + 1} / {candidates.length}
-            </p>
-          </div>
-
-          {candidates.length === 0 || currentIndex >= candidates.length ? (
-            <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
-              <Flame className="size-12 text-muted-foreground" />
-              <h2 className="text-xl font-semibold">No more cards</h2>
-              <p className="text-sm text-muted-foreground">
-                Check back later or browse all matches.
-              </p>
-              <Button variant="outline" onClick={scrollToMatches}>
-                Browse Matches
-              </Button>
+                <Button variant="outline" onClick={scrollToMatches}>
+                  Browse Matches
+                </Button>
+              </div>
             </div>
           ) : (
             <>
@@ -356,7 +364,7 @@ function SwipeCard({ oc, onResult, suppressTapRef }: SwipeCardProps) {
 
   return (
     <motion.div
-      style={{ x, rotate }}
+      style={{ x, rotate, touchAction: "none" }}
       drag
       dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
       dragElastic={0.8}
@@ -364,7 +372,7 @@ function SwipeCard({ oc, onResult, suppressTapRef }: SwipeCardProps) {
       onDragEnd={handleDragEnd}
       onClick={handleClick}
       whileTap={{ cursor: "grabbing" }}
-      className="relative flex-1 cursor-grab overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/10"
+      className="relative flex-1 cursor-grab touch-none overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/10"
     >
       <div className="relative aspect-[3/4] w-full">
         {imageUrl ? (
@@ -386,13 +394,13 @@ function SwipeCard({ oc, onResult, suppressTapRef }: SwipeCardProps) {
 
         <motion.div
           style={{ opacity: likeOpacity }}
-          className="absolute top-8 right-8 rotate-12 rounded-lg border-4 border-green-500 px-4 py-2 text-3xl font-bold text-green-500"
+          className="absolute top-8 left-8 -rotate-12 rounded-lg border-4 border-green-500 px-4 py-2 text-3xl font-bold text-green-500"
         >
           LIKE
         </motion.div>
         <motion.div
           style={{ opacity: nopeOpacity }}
-          className="absolute top-8 left-8 -rotate-12 rounded-lg border-4 border-destructive px-4 py-2 text-3xl font-bold text-destructive"
+          className="absolute top-8 right-8 rotate-12 rounded-lg border-4 border-destructive px-4 py-2 text-3xl font-bold text-destructive"
         >
           NOPE
         </motion.div>
@@ -417,12 +425,8 @@ function SwipeCard({ oc, onResult, suppressTapRef }: SwipeCardProps) {
               </>
             )}
           </div>
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {oc.tags?.slice(0, 5).map((tag) => (
-              <Badge key={tag} variant="secondary" className="bg-black/40 text-white">
-                {tag}
-              </Badge>
-            ))}
+          <div className="mt-3">
+            <TagPillList tags={oc.tags} max={5} />
           </div>
         </div>
       </div>

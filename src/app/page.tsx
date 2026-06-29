@@ -88,6 +88,17 @@ export default function DashboardPage() {
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const saved = sessionStorage.getItem("unhinged_dashboard_scroll");
+    if (saved) {
+      const y = parseInt(saved, 10);
+      sessionStorage.removeItem("unhinged_dashboard_scroll");
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: y, behavior: "auto" });
+      });
+    }
+  }, []);
+
+  useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search.trim().toLowerCase()), 300);
     return () => clearTimeout(timer);
   }, [search]);
@@ -262,6 +273,10 @@ export default function DashboardPage() {
     setDropIndex(index);
   }
 
+  function saveDashboardScroll() {
+    sessionStorage.setItem("unhinged_dashboard_scroll", String(window.scrollY));
+  }
+
   function handleContainerDrop(e: React.DragEvent) {
     e.preventDefault();
     if (!draggingId || dropIndex == null) return;
@@ -335,8 +350,13 @@ export default function DashboardPage() {
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 px-4 py-4 md:px-6 md:py-6">
-              <h1 className="text-2xl font-bold md:text-3xl">Your OCs</h1>
-              <p className="text-sm text-muted-foreground">
+              <h1 className="inline-flex items-center gap-2 text-3xl font-extrabold md:text-4xl">
+                <span className="bg-gradient-to-r from-primary via-pink-400 to-purple-400 bg-clip-text text-transparent">
+                  Your OCs
+                </span>
+                <span className="inline-block animate-pulse">✨</span>
+              </h1>
+              <p className="text-sm text-muted-foreground/80">
                 {isGuest
                   ? "Guest mode — your OCs are stored locally."
                   : "Manage, reorder, and preview your characters."}
@@ -346,9 +366,9 @@ export default function DashboardPage() {
 
           <div className="flex flex-1 flex-col gap-6 px-6 py-6 md:px-8 lg:px-10">
             {/* Stats */}
-            <div className="relative max-w-2xl">
+            <div className="relative w-full max-w-2xl">
               <div className="absolute -inset-4 rounded-3xl bg-primary/10 blur-3xl" aria-hidden="true" />
-              <div className="relative grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="relative grid grid-cols-4 gap-2 sm:gap-3">
                 <StatCard
                   icon={Users}
                   label="Total OCs"
@@ -445,6 +465,11 @@ export default function DashboardPage() {
                     : "flex flex-col gap-4"
                 )}
               >
+                {view === "grid" ? (
+                  <CreateOCCard />
+                ) : (
+                  <CreateOCRow />
+                )}
                 {(() => {
                   const items: ReactNode[] = [];
                   displayOcs.forEach((oc, index) => {
@@ -463,6 +488,7 @@ export default function DashboardPage() {
                       <div
                         key={oc.id}
                         data-card-id={oc.id}
+                        onClick={saveDashboardScroll}
                         className={cn(
                           "h-fit transition-all",
                           draggingId === oc.id && "opacity-50"
@@ -539,15 +565,43 @@ function StatCard({
   value: number;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-card/60 p-4 shadow-[0_0_20px_rgba(255,45,123,0.15)] backdrop-blur-md ring-1 ring-white/5">
-      <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
-        <Icon className="size-5 text-primary" />
+    <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-card/60 p-2 shadow-[0_0_20px_rgba(255,45,123,0.15)] backdrop-blur-md ring-1 ring-white/5 sm:gap-3 sm:p-4">
+      <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20 sm:size-10">
+        <Icon className="size-3.5 text-primary sm:size-5" />
       </div>
-      <div>
-        <p className="text-2xl font-bold leading-none">{value}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{label}</p>
+      <div className="min-w-0">
+        <p className="text-base font-bold leading-none sm:text-2xl">{value}</p>
+        <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground sm:mt-1 sm:text-xs">{label}</p>
       </div>
     </div>
+  );
+}
+
+function CreateOCCard() {
+  return (
+    <Link
+      href="/create"
+      className="group flex aspect-[3/4] flex-col items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed border-primary/40 bg-card/40 backdrop-blur-sm ring-1 ring-foreground/10 transition-all hover:border-primary hover:bg-primary/5 hover:shadow-[0_0_24px_rgba(255,45,123,0.25)]"
+    >
+      <div className="flex size-14 items-center justify-center rounded-full border border-primary/30 bg-primary/10 transition-all group-hover:scale-110 group-hover:border-primary/60 group-hover:bg-primary/20">
+        <Plus className="size-7 text-primary" />
+      </div>
+      <span className="text-sm font-semibold text-primary">Create New OC</span>
+    </Link>
+  );
+}
+
+function CreateOCRow() {
+  return (
+    <Link
+      href="/create"
+      className="group flex items-center gap-3 rounded-xl border border-dashed border-primary/40 bg-card/40 p-3 backdrop-blur-sm ring-1 ring-foreground/10 transition-all hover:border-primary hover:bg-primary/5 hover:shadow-[0_0_20px_rgba(255,45,123,0.2)]"
+    >
+      <div className="flex size-10 items-center justify-center rounded-full border border-primary/30 bg-primary/10 transition-all group-hover:border-primary/60 group-hover:bg-primary/20">
+        <Plus className="size-5 text-primary" />
+      </div>
+      <span className="text-sm font-semibold text-primary">Create New OC</span>
+    </Link>
   );
 }
 

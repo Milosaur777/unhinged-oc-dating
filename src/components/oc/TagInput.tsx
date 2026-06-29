@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, KeyboardEvent } from "react";
-import { X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { TagPill } from "@/components/ui/TagPill";
 import { cn } from "@/lib/utils";
 
 interface TagInputProps {
@@ -54,21 +53,9 @@ export function TagInput({
     <div className={cn("flex flex-col gap-2", className)}>
       <div className="flex min-h-[2rem] flex-wrap items-center gap-1.5 rounded-lg border border-input bg-transparent px-2 py-1.5 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
         {tags.map((tag) => (
-          <Badge
-            key={tag}
-            variant="secondary"
-            className="flex items-center gap-1 px-1.5 py-0.5 text-xs"
-          >
+          <TagPill key={tag} onRemove={() => removeTag(tag)} removeLabel={`Remove ${tag}`}>
             {tag}
-            <button
-              type="button"
-              onClick={() => removeTag(tag)}
-              className="rounded-full p-0.5 hover:bg-foreground/10"
-              aria-label={`Remove ${tag}`}
-            >
-              <X className="size-3" />
-            </button>
-          </Badge>
+          </TagPill>
         ))}
         <Input
           value={input}
