@@ -316,7 +316,7 @@ export default function DashboardPage() {
     return (
       <>
         <DashboardHeader />
-        <main className="mx-auto flex w-full max-w-7xl flex-1 items-center justify-center px-4">
+        <main className="mx-auto flex w-full max-w-7xl flex-1 items-center justify-center px-4 pt-20 md:pt-24">
           <div className="text-muted-foreground">Loading...</div>
         </main>
       </>
@@ -359,7 +359,6 @@ export default function DashboardPage() {
                 <span className="bg-gradient-to-r from-primary via-pink-400 to-purple-400 bg-clip-text text-transparent">
                   Your OCs
                 </span>
-                <span className="inline-block animate-pulse">✨</span>
               </h1>
               <p className="text-sm text-muted-foreground/80">
                 {isGuest
@@ -379,7 +378,7 @@ export default function DashboardPage() {
                   label="Total OCs"
                   value={isGuest ? guestMapped.length : ocs.length}
                 />
-                <StatCard icon={Heart} label="Total Likes" value={isGuest ? 0 : stats.totalLikes} />
+                <StatCard icon={Heart} label="Total Likes" value={isGuest ? 0 : stats.totalLikes} variant="pink" />
                 <StatCard
                   icon={MessageCircle}
                   label="Matches"
@@ -422,7 +421,7 @@ export default function DashboardPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <div className="flex items-center rounded-lg border border-border bg-card p-1">
+                <div className="flex items-center rounded-xl border border-white/10 bg-white/5 p-1 backdrop-blur-md">
                   <Button
                     variant={view === "grid" ? "secondary" : "ghost"}
                     size="icon-sm"
@@ -441,7 +440,7 @@ export default function DashboardPage() {
                   </Button>
                 </div>
                 <Link href="/create" className="shrink-0">
-                  <Button className="gap-2 shadow-[0_0_16px_rgba(255,45,123,0.35)]">
+                  <Button className="gap-2">
                     <Plus className="size-4" />
                     <span className="hidden sm:inline">Create OC</span>
                     <span className="sm:hidden">New</span>
@@ -452,7 +451,7 @@ export default function DashboardPage() {
 
             {/* OC grid/list */}
             {displayOcs.length === 0 ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-card/50 py-16">
+              <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] py-16">
                 <Frown className="size-12 text-muted-foreground" />
                 <p className="text-muted-foreground">No OCs found.</p>
                 <Link href="/create">
@@ -562,26 +561,36 @@ export default function DashboardPage() {
   );
 }
 
-type StatVariant = "default" | "blue" | "purple";
+type StatVariant = "default" | "pink" | "blue" | "purple";
 
-const STAT_VARIANTS: Record<StatVariant, { bg: string; ring: string; icon: string; shadow: string }> = {
+const STAT_VARIANTS: Record<StatVariant, { bg: string; icon: string; iconColor: string; glow: string; hoverGlow: string }> = {
   default: {
     bg: "bg-primary/10",
-    ring: "ring-primary/20",
     icon: "text-primary",
-    shadow: "shadow-[0_0_20px_rgba(255,45,123,0.15)]",
+    iconColor: "text-primary",
+    glow: "shadow-[0_0_20px_rgba(255,45,123,0.12)]",
+    hoverGlow: "hover:shadow-[0_0_28px_rgba(255,45,123,0.25)]",
+  },
+  pink: {
+    bg: "bg-pink-500/10",
+    icon: "text-pink-400",
+    iconColor: "text-pink-400",
+    glow: "shadow-[0_0_20px_rgba(236,72,153,0.12)]",
+    hoverGlow: "hover:shadow-[0_0_28px_rgba(236,72,153,0.25)]",
   },
   blue: {
     bg: "bg-blue-500/10",
-    ring: "ring-blue-500/20",
     icon: "text-blue-400",
-    shadow: "shadow-[0_0_20px_rgba(59,130,246,0.2)]",
+    iconColor: "text-blue-400",
+    glow: "shadow-[0_0_20px_rgba(59,130,246,0.12)]",
+    hoverGlow: "hover:shadow-[0_0_28px_rgba(59,130,246,0.25)]",
   },
   purple: {
     bg: "bg-purple-500/10",
-    ring: "ring-purple-500/20",
     icon: "text-purple-400",
-    shadow: "shadow-[0_0_20px_rgba(168,85,247,0.2)]",
+    iconColor: "text-purple-400",
+    glow: "shadow-[0_0_20px_rgba(168,85,247,0.12)]",
+    hoverGlow: "hover:shadow-[0_0_28px_rgba(168,85,247,0.25)]",
   },
 };
 
@@ -598,9 +607,15 @@ function StatCard({
 }) {
   const style = STAT_VARIANTS[variant];
   return (
-    <div className={cn("flex items-center gap-2 rounded-xl border border-white/10 bg-card/60 p-2 backdrop-blur-md ring-1 ring-white/5 sm:gap-3 sm:p-4", style.shadow)}>
-      <div className={cn("flex size-7 shrink-0 items-center justify-center rounded-lg sm:size-10", style.bg, style.ring)}>
-        <Icon className={cn("size-3.5 sm:size-5", style.icon)} />
+    <div
+      className={cn(
+        "group flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-2 backdrop-blur-xl ring-1 ring-white/5 transition-all duration-300 ease-out hover:scale-[1.02] hover:border-white/[0.15] sm:gap-3 sm:p-4",
+        style.glow,
+        style.hoverGlow
+      )}
+    >
+      <div className={cn("flex size-7 shrink-0 items-center justify-center rounded-lg sm:size-10", style.bg)}>
+        <Icon className={cn("size-3.5 sm:size-5", style.iconColor)} />
       </div>
       <div className="min-w-0">
         <p className="text-base font-bold leading-none sm:text-2xl">{value}</p>
@@ -614,12 +629,12 @@ function CreateOCCard() {
   return (
     <Link
       href="/create"
-      className="group flex h-[420px] flex-col items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed border-primary/40 bg-card/40 backdrop-blur-sm ring-1 ring-foreground/10 transition-all hover:border-primary hover:bg-primary/5 hover:shadow-[0_0_24px_rgba(255,45,123,0.25)]"
+      className="group flex h-[420px] flex-col items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed border-white/15 bg-white/[0.02] backdrop-blur-xl transition-all duration-300 ease-out hover:border-primary/40 hover:bg-primary/5 hover:shadow-[0_0_32px_rgba(255,45,123,0.2)]"
     >
-      <div className="flex size-14 items-center justify-center rounded-full border border-primary/30 bg-primary/10 transition-all group-hover:scale-110 group-hover:border-primary/60 group-hover:bg-primary/20">
-        <Plus className="size-7 text-primary" />
+      <div className="flex size-14 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-all duration-300 group-hover:scale-110 group-hover:border-primary/30 group-hover:bg-primary/10">
+        <Plus className="size-7 text-muted-foreground transition-colors group-hover:text-primary" />
       </div>
-      <span className="text-sm font-semibold text-primary">Create New OC</span>
+      <span className="text-sm font-semibold text-muted-foreground transition-colors group-hover:text-primary">Create New OC</span>
     </Link>
   );
 }
@@ -628,12 +643,12 @@ function CreateOCRow() {
   return (
     <Link
       href="/create"
-      className="group flex items-center gap-3 rounded-xl border border-dashed border-primary/40 bg-card/40 p-3 backdrop-blur-sm ring-1 ring-foreground/10 transition-all hover:border-primary hover:bg-primary/5 hover:shadow-[0_0_20px_rgba(255,45,123,0.2)]"
+      className="group flex items-center gap-3 rounded-xl border border-dashed border-white/15 bg-white/[0.02] p-3 backdrop-blur-xl transition-all duration-300 ease-out hover:border-primary/40 hover:bg-primary/5 hover:shadow-[0_0_24px_rgba(255,45,123,0.2)]"
     >
-      <div className="flex size-10 items-center justify-center rounded-full border border-primary/30 bg-primary/10 transition-all group-hover:border-primary/60 group-hover:bg-primary/20">
-        <Plus className="size-5 text-primary" />
+      <div className="flex size-10 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-all duration-300 group-hover:border-primary/30 group-hover:bg-primary/10">
+        <Plus className="size-5 text-muted-foreground transition-colors group-hover:text-primary" />
       </div>
-      <span className="text-sm font-semibold text-primary">Create New OC</span>
+      <span className="text-sm font-semibold text-muted-foreground transition-colors group-hover:text-primary">Create New OC</span>
     </Link>
   );
 }

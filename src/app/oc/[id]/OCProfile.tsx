@@ -51,7 +51,7 @@ export function OCProfile({ oc, isOwner, backToSwipe, fromOc }: OCProfileProps) 
   return (
     <>
       <DashboardHeader />
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6">
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-6 pt-20 md:pt-24">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"

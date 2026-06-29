@@ -50,7 +50,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" href="/favicon.png" sizes="512x512" />
         <link rel="apple-touch-icon" href="/apple-icon.png" />
       </head>
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="noise-bg min-h-full flex flex-col bg-background text-foreground">
         <AuthProvider>
           <TooltipProvider>
             {children}

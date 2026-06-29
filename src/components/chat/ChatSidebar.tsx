@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { PanelLeftClose, PanelLeftOpen, MessageCircle, ExternalLink } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, MessageCircle, ExternalLink, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -47,11 +47,11 @@ export function ChatSidebar() {
   return (
     <aside
       className={cn(
-        "sticky top-14 z-30 hidden h-[calc(100vh-3.5rem)] flex-col border-r border-border bg-card/50 backdrop-blur-sm transition-all duration-300 md:flex",
+        "sticky top-12 z-30 hidden h-[calc(100vh-3rem)] flex-col border-r border-white/5 bg-white/[0.02] backdrop-blur-sm transition-all duration-300 md:flex",
         collapsed ? "w-16" : "w-72"
       )}
     >
-      <div className="flex items-center justify-between border-b border-border p-3">
+      <div className="flex items-center justify-between border-b border-white/5 p-3">
         {!collapsed && (
           <h2 className="text-sm font-semibold text-foreground">Active Chats</h2>
         )}
@@ -85,9 +85,13 @@ export function ChatSidebar() {
 
       {!collapsed && (
         <div className="p-3">
-          <div className="rounded-xl border border-white/10 bg-card/60 p-4 shadow-[0_0_20px_rgba(255,45,123,0.12)] backdrop-blur-md ring-1 ring-white/5">
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Do you like the app? Support it to help keep it running.
+          <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl shadow-[0_0_20px_rgba(255,45,123,0.08)]">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Coffee className="size-4" />
+              <p className="text-xs font-medium">Enjoying Unhinged?</p>
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground/80">
+              Support the app to keep it running and growing.
             </p>
             <a
               href="https://ko-fi.com/unhinged"
@@ -117,19 +121,19 @@ function ChatCard({ chat, collapsed }: { chat: DashboardChat; collapsed: boolean
     <Link
       href={`/chat/${chat.id}`}
       className={cn(
-        "group relative flex items-center gap-3 rounded-xl border border-transparent bg-card/60 p-2.5 ring-1 ring-white/5 backdrop-blur-sm transition-all hover:border-primary/40 hover:bg-primary/5 hover:shadow-[0_0_16px_rgba(255,45,123,0.2)]",
-        collapsed && "justify-center border-white/10 p-2"
+        "group relative flex items-center gap-3 rounded-xl border border-transparent bg-white/[0.03] p-2.5 backdrop-blur-md transition-all duration-200 ease-out hover:border-primary/30 hover:bg-white/[0.06] hover:shadow-[0_0_16px_rgba(255,45,123,0.15)]",
+        collapsed && "justify-center border-white/5 p-2"
       )}
     >
       <div className="relative shrink-0">
-        <Avatar className="size-11 border border-border">
+        <Avatar className="size-11 border border-white/10">
           <AvatarImage src={partnerImage} alt={partner?.name || "Partner OC"} />
           <AvatarFallback className="text-xs font-bold">
             {getInitials(partner?.name || "?")}
           </AvatarFallback>
         </Avatar>
         {!collapsed && (
-          <Avatar className="absolute -right-1 -bottom-1 size-5 ring-2 ring-card">
+          <Avatar className="absolute -right-1 -bottom-1 size-5 ring-2 ring-zinc-950">
             <AvatarImage src={myImage} alt={myOc?.name || "My OC"} />
             <AvatarFallback className="text-[8px] font-bold">
               {getInitials(myOc?.name || "?")}
@@ -138,7 +142,7 @@ function ChatCard({ chat, collapsed }: { chat: DashboardChat; collapsed: boolean
         )}
         <span
           className={cn(
-            "absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-card",
+            "absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-zinc-950",
             chat.is_online ? "bg-green-500" : "bg-muted-foreground"
           )}
           aria-label={chat.is_online ? "Online" : "Offline"}

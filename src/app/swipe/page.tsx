@@ -123,7 +123,7 @@ export default function SwipePage() {
     return (
       <>
         <DashboardHeader />
-        <main className="flex flex-1 items-center justify-center">Loading...</main>
+        <main className="flex flex-1 items-center justify-center pt-20 md:pt-24">Loading...</main>
       </>
     );
   }
@@ -134,7 +134,7 @@ export default function SwipePage() {
     return (
       <>
         <DashboardHeader />
-        <main className="flex flex-1 items-center justify-center">Loading...</main>
+        <main className="flex flex-1 items-center justify-center pt-20 md:pt-24">Loading...</main>
       </>
     );
   }
@@ -143,7 +143,7 @@ export default function SwipePage() {
     return (
       <>
         <DashboardHeader />
-        <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
+        <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-4 px-4 pt-20 text-center md:pt-24">
           <Flame className="size-12 text-muted-foreground" />
           <h1 className="text-2xl font-bold">Swiping is for logged-in users</h1>
           <p className="text-muted-foreground">
@@ -158,7 +158,7 @@ export default function SwipePage() {
   return (
     <>
       <DashboardHeader />
-      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-6">
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-6 pt-20 md:pt-24">
         <div className="mx-auto w-full max-w-md">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Swipe</h1>
@@ -217,7 +217,7 @@ export default function SwipePage() {
                   variant="outline"
                   size="icon-lg"
                   onClick={() => handleResult("pass")}
-                  className="rounded-full border-destructive text-destructive hover:bg-destructive/10"
+                  className="rounded-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:shadow-[0_0_20px_rgba(255,68,68,0.3)]"
                   aria-label="Pass"
                 >
                   <X className="size-6" />
@@ -225,7 +225,7 @@ export default function SwipePage() {
                 <Button
                   size="icon-lg"
                   onClick={() => handleResult("like")}
-                  className="rounded-full shadow-[0_0_20px_rgba(255,45,123,0.4)]"
+                  className="rounded-full shadow-[0_0_24px_rgba(255,45,123,0.45)] hover:shadow-[0_0_32px_rgba(255,45,123,0.6)]"
                   aria-label="Like"
                 >
                   <Heart className="size-6" />
@@ -240,7 +240,7 @@ export default function SwipePage() {
           )}
         </div>
 
-        <section id="matches" className="mt-6 border-t border-border pt-8">
+        <section id="matches" className="mt-6 border-t border-white/5 pt-8">
           <MatchesSection userId={user.id} />
         </section>
       </main>
@@ -302,7 +302,7 @@ function MatchesSection({ userId }: { userId: string }) {
       {dataLoading ? (
         <div className="text-sm text-muted-foreground">Loading matches...</div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-card/50 py-16">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] py-16">
           <Frown className="size-10 text-muted-foreground" />
           <p className="text-muted-foreground">No matches found.</p>
           {query ? (
@@ -372,7 +372,7 @@ function SwipeCard({ oc, onResult, suppressTapRef }: SwipeCardProps) {
       onDragEnd={handleDragEnd}
       onClick={handleClick}
       whileTap={{ cursor: "grabbing" }}
-      className="relative flex-1 cursor-grab touch-none overflow-hidden rounded-2xl bg-card ring-1 ring-foreground/10"
+      className="relative flex-1 cursor-grab touch-none overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-zinc-950/60 to-zinc-950/30 ring-1 ring-white/5 backdrop-blur-sm shadow-[0_8px_40px_rgba(0,0,0,0.4)]"
     >
       <div className="relative aspect-[3/4] w-full">
         {imageUrl ? (
@@ -386,7 +386,7 @@ function SwipeCard({ oc, onResult, suppressTapRef }: SwipeCardProps) {
             priority
           />
         ) : (
-          <div className="flex size-full items-center justify-center bg-muted text-5xl font-bold text-muted-foreground">
+          <div className="flex size-full items-center justify-center bg-zinc-900 text-5xl font-bold text-muted-foreground">
             {getInitials(oc.name)}
           </div>
         )}
@@ -394,13 +394,13 @@ function SwipeCard({ oc, onResult, suppressTapRef }: SwipeCardProps) {
 
         <motion.div
           style={{ opacity: likeOpacity }}
-          className="absolute top-8 left-8 -rotate-12 rounded-lg border-4 border-green-500 px-4 py-2 text-3xl font-bold text-green-500"
+          className="absolute top-8 left-8 -rotate-12 rounded-xl border-4 border-green-500 bg-green-500/10 px-4 py-2 text-3xl font-bold text-green-500 shadow-[0_0_24px_rgba(34,197,94,0.4)] backdrop-blur-sm"
         >
           LIKE
         </motion.div>
         <motion.div
           style={{ opacity: nopeOpacity }}
-          className="absolute top-8 right-8 rotate-12 rounded-lg border-4 border-destructive px-4 py-2 text-3xl font-bold text-destructive"
+          className="absolute top-8 right-8 rotate-12 rounded-xl border-4 border-destructive bg-destructive/10 px-4 py-2 text-3xl font-bold text-destructive shadow-[0_0_24px_rgba(255,68,68,0.4)] backdrop-blur-sm"
         >
           NOPE
         </motion.div>
@@ -414,13 +414,13 @@ function SwipeCard({ oc, onResult, suppressTapRef }: SwipeCardProps) {
             {getField(oc, "species") && <span>{getField(oc, "species")}</span>}
             {getField(oc, "gender") && (
               <>
-                <span className="text-white/50">•</span>
+                <span className="text-white/40">&bull;</span>
                 <span>{getField(oc, "gender")}</span>
               </>
             )}
             {getField(oc, "age") && (
               <>
-                <span className="text-white/50">•</span>
+                <span className="text-white/40">&bull;</span>
                 <span>{getField(oc, "age")}</span>
               </>
             )}

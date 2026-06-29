@@ -94,193 +94,234 @@ export function DashboardHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 text-lg font-bold text-foreground">
-          <Image
-            src="/icon.avif"
-            alt="Unhinged"
-            width={36}
-            height={36}
-            className="size-9 object-contain"
-          />
-          <span className="hidden bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent md:inline">
-            Unhinged
-          </span>
-        </Link>
-
-        <nav className="hidden items-center gap-1 md:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
-                pathname === link.href &&
-                  "bg-muted text-foreground ring-1 ring-primary/50 shadow-[0_0_12px_rgba(255,45,123,0.25)]"
-              )}
-            >
-              <link.icon className="size-4" />
-              {link.label}
-              {link.href === "/likes" && likesCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                  {likesCount > 9 ? "9+" : likesCount}
-                </span>
-              )}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="relative"
-                  aria-label="Notifications"
-                >
-                  <Bell className="size-4" />
-                  {likesCount > 0 && (
-                    <span className="absolute top-1 right-1 size-2 rounded-full bg-primary shadow-[0_0_8px_rgba(255,45,123,0.8)]" />
-                  )}
-                </Button>
-              }
+    <>
+      {/* Desktop: floating pill navbar */}
+      <header className="fixed top-4 left-1/2 z-50 hidden -translate-x-1/2 md:block">
+        <div className="flex items-center gap-1 rounded-full border border-white/10 bg-black/40 px-2 py-1.5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+          <Link href="/" className="flex items-center gap-2 pl-3 pr-2 text-lg font-bold text-foreground">
+            <Image
+              src="/icon.avif"
+              alt="Unhinged"
+              width={28}
+              height={28}
+              className="size-7 object-contain"
             />
-            <TooltipContent side="bottom">Updates &amp; announcements coming soon</TooltipContent>
-          </Tooltip>
+            <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
+              Unhinged
+            </span>
+          </Link>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "hidden items-center gap-2 px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex",
-                    pathname === "/creator" &&
-                      "bg-muted text-foreground ring-1 ring-primary/50 shadow-[0_0_12px_rgba(255,45,123,0.25)]"
-                  )}
-                >
-                  <Avatar size="sm" className="size-7">
-                    <AvatarImage src={getPublicImageUrl(creatorAvatarUrl)} alt={creatorName || "Creator"} />
-                    <AvatarFallback>
-                      {creatorName ? getInitials(creatorName) : <User className="size-3.5" />}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span>Creator</span>
-                  <ChevronDown className="size-3.5 opacity-50" />
-                </Button>
-              }
-            />
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem
-                render={
-                  <Link href="/creator" className="cursor-pointer">
-                    <User className="mr-2 size-4" />
-                    Profile
-                  </Link>
-                }
-              />
-              <DropdownMenuItem
-                render={
-                  <Link href="/creator" className="cursor-pointer">
-                    <Settings className="mr-2 size-4" />
-                    Settings
-                  </Link>
-                }
-              />
-              <DropdownMenuItem
-                disabled
-                className="cursor-not-allowed"
-                onClick={() => toast.info("Account switching is coming soon")}
+          <nav className="flex items-center gap-0.5">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "relative flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:text-foreground",
+                  pathname === link.href
+                    ? "bg-white/10 text-foreground shadow-[0_0_12px_rgba(255,45,123,0.2)]"
+                    : "hover:bg-white/5"
+                )}
               >
-                <Users className="mr-2 size-4" />
-                Switch Account
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <link.icon className="size-3.5" />
+                {link.label}
+                {link.href === "/likes" && likesCount > 0 && (
+                  <span className="absolute -top-1 -right-0.5 flex size-3.5 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground">
+                    {likesCount > 9 ? "9+" : likesCount}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </nav>
 
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={handleLogout}
-            className="hidden md:flex"
-            aria-label="Log out"
-          >
-            <LogOut className="size-4" />
-          </Button>
+          <div className="flex items-center gap-0.5 pl-1">
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    className="relative rounded-full"
+                    aria-label="Notifications"
+                  >
+                    <Bell className="size-3.5" />
+                    {likesCount > 0 && (
+                      <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(255,45,123,0.8)]" />
+                    )}
+                  </Button>
+                }
+              />
+              <TooltipContent side="bottom">Updates &amp; announcements coming soon</TooltipContent>
+            </Tooltip>
 
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger
-              render={
-                <Button variant="ghost" size="icon-sm" className="md:hidden" aria-label="Open menu">
-                  <Menu className="size-5" />
-                </Button>
-              }
-            />
-            <SheetContent side="right" className="w-64 border-border bg-card">
-              <SheetTitle className="sr-only">Navigation menu</SheetTitle>
-              <div className="flex flex-col gap-2 pt-6">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileOpen(false)}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="ghost"
                     className={cn(
-                      "flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
-                      pathname === link.href
-                        ? "bg-primary/10 text-primary ring-1 ring-primary/30 shadow-[0_0_12px_rgba(255,45,123,0.2)]"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      "flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
+                      pathname === "/creator" && "bg-white/10 text-foreground"
                     )}
                   >
-                    <span className="flex items-center gap-2">
-                      <link.icon className="size-4" />
-                      {link.label}
-                    </span>
-                    {link.href === "/likes" && likesCount > 0 && (
-                      <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                        {likesCount > 9 ? "9+" : likesCount}
-                      </span>
-                    )}
-                  </Link>
-                ))}
-                <Link
-                  href="/creator"
-                  onClick={() => setMobileOpen(false)}
-                  className={cn(
-                    "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
-                    pathname === "/creator"
-                      ? "bg-primary/10 text-primary ring-1 ring-primary/30 shadow-[0_0_12px_rgba(255,45,123,0.2)]"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
+                    <Avatar size="sm" className="size-6">
+                      <AvatarImage src={getPublicImageUrl(creatorAvatarUrl)} alt={creatorName || "Creator"} />
+                      <AvatarFallback className="text-[8px]">
+                        {creatorName ? getInitials(creatorName) : <User className="size-3" />}
+                      </AvatarFallback>
+                    </Avatar>
+                    <ChevronDown className="size-3 opacity-50" />
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem
+                  render={
+                    <Link href="/creator" className="cursor-pointer">
+                      <User className="mr-2 size-4" />
+                      Profile
+                    </Link>
+                  }
+                />
+                <DropdownMenuItem
+                  render={
+                    <Link href="/creator" className="cursor-pointer">
+                      <Settings className="mr-2 size-4" />
+                      Settings
+                    </Link>
+                  }
+                />
+                <DropdownMenuItem
+                  disabled
+                  className="cursor-not-allowed"
+                  onClick={() => toast.info("Account switching is coming soon")}
                 >
-                  <User className="size-4" />
-                  Creator
-                </Link>
-                <a
-                  href="https://ko-fi.com/unhinged"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <ExternalLink className="size-4" />
-                  Support Unhinged
-                </a>
-                <Button
-                  variant="outline"
-                  className="mt-4 justify-start gap-2"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="size-4" />
-                  Log out
-                </Button>
-              </div>
-            </SheetContent>
-          </Sheet>
+                  <Users className="mr-2 size-4" />
+                  Switch Account
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={handleLogout}
+              className="rounded-full"
+              aria-label="Log out"
+            >
+              <LogOut className="size-3.5" />
+            </Button>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Mobile: fixed top bar */}
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-black/40 backdrop-blur-xl md:hidden">
+        <div className="flex h-12 items-center justify-between px-4">
+          <Link href="/" className="flex items-center gap-2 text-lg font-bold text-foreground">
+            <Image
+              src="/icon.avif"
+              alt="Unhinged"
+              width={28}
+              height={28}
+              className="size-7 object-contain"
+            />
+            <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
+              Unhinged
+            </span>
+          </Link>
+
+          <div className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="relative"
+                    aria-label="Notifications"
+                  >
+                    <Bell className="size-4" />
+                    {likesCount > 0 && (
+                      <span className="absolute top-1 right-1 size-2 rounded-full bg-primary shadow-[0_0_8px_rgba(255,45,123,0.8)]" />
+                    )}
+                  </Button>
+                }
+              />
+              <TooltipContent side="bottom">Updates &amp; announcements coming soon</TooltipContent>
+            </Tooltip>
+
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger
+                render={
+                  <Button variant="ghost" size="icon-sm" aria-label="Open menu">
+                    <Menu className="size-5" />
+                  </Button>
+                }
+              />
+              <SheetContent side="right" className="w-64 border-white/10 bg-[#0a0a14]/95 backdrop-blur-xl">
+                <SheetTitle className="sr-only">Navigation menu</SheetTitle>
+                <div className="flex flex-col gap-2 pt-6">
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        "flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                        pathname === link.href
+                          ? "bg-white/10 text-foreground shadow-[0_0_12px_rgba(255,45,123,0.2)]"
+                          : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                      )}
+                    >
+                      <span className="flex items-center gap-2">
+                        <link.icon className="size-4" />
+                        {link.label}
+                      </span>
+                      {link.href === "/likes" && likesCount > 0 && (
+                        <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                          {likesCount > 9 ? "9+" : likesCount}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                  <Link
+                    href="/creator"
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      "flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                      pathname === "/creator"
+                        ? "bg-white/10 text-foreground shadow-[0_0_12px_rgba(255,45,123,0.2)]"
+                        : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                    )}
+                  >
+                    <User className="size-4" />
+                    Creator
+                  </Link>
+                  <a
+                    href="https://ko-fi.com/unhinged"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
+                  >
+                    <ExternalLink className="size-4" />
+                    Support Unhinged
+                  </a>
+                  <Button
+                    variant="outline"
+                    className="mt-4 justify-start gap-2"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="size-4" />
+                    Log out
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+      </header>
+    </>
   );
 }

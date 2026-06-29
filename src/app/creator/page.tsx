@@ -216,7 +216,7 @@ export default function CreatorPage() {
     return (
       <>
         <DashboardHeader />
-        <main className="flex flex-1 items-center justify-center">Loading...</main>
+        <main className="flex flex-1 items-center justify-center pt-20 md:pt-24">Loading...</main>
       </>
     );
   }
@@ -227,7 +227,7 @@ export default function CreatorPage() {
     return (
       <>
         <DashboardHeader />
-        <main className="flex flex-1 items-center justify-center">Loading...</main>
+        <main className="flex flex-1 items-center justify-center pt-20 md:pt-24">Loading...</main>
       </>
     );
   }
@@ -236,7 +236,7 @@ export default function CreatorPage() {
     return (
       <>
         <DashboardHeader />
-        <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
+        <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-4 px-4 pt-20 text-center md:pt-24">
           <Frown className="size-12 text-muted-foreground" />
           <h1 className="text-2xl font-bold">Creator profile is for logged-in users</h1>
           <Button onClick={() => router.push("/auth/login")}>Sign In</Button>
@@ -250,7 +250,7 @@ export default function CreatorPage() {
   return (
     <>
       <DashboardHeader />
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-6">
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-6 pt-20 md:pt-24">
         <div className="flex items-center gap-3">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10">
             <User className="size-6 text-primary" />

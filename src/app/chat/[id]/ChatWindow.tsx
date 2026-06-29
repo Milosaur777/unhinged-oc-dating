@@ -84,8 +84,8 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name }: ChatWindowProps) {
   return (
     <>
       <DashboardHeader />
-      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col">
-        <div className="flex items-center gap-3 border-b border-border bg-card/50 px-4 py-3">
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col pt-12 md:pt-16">
+        <div className="flex items-center gap-3 border-b border-white/5 bg-white/[0.02] px-4 py-3 backdrop-blur-md">
           <Link href="/chat" className="rounded-md p-1 hover:bg-muted">
             <ArrowLeft className="size-5 text-muted-foreground" />
           </Link>
@@ -179,7 +179,7 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name }: ChatWindowProps) {
         </div>
 
         {showEmoji && (
-          <div className="border-t border-border bg-card p-3">
+          <div className="border-t border-white/5 bg-white/[0.02] p-3 backdrop-blur-md">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Emojis</span>
               <Button variant="ghost" size="icon-xs" onClick={() => setShowEmoji(false)}>
@@ -202,7 +202,7 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name }: ChatWindowProps) {
           </div>
         )}
 
-        <div className="sticky bottom-0 border-t border-border bg-background p-3">
+        <div className="sticky bottom-0 border-t border-white/5 bg-background/80 p-3 backdrop-blur-md">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"

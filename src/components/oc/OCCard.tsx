@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { Pencil, Trash2, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TagPillList } from "@/components/ui/TagPill";
 import { OCWithDetails } from "@/lib/supabase-queries";
@@ -48,9 +47,9 @@ export function OCCard({
 
   if (view === "list") {
     return (
-      <Card
+      <div
         className={cn(
-          "group/card relative overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 transition-all hover:ring-primary/50 hover:shadow-lg hover:shadow-primary/5",
+          "group/card relative overflow-hidden rounded-xl border border-zinc-800 bg-gradient-to-b from-zinc-950/60 to-zinc-950/30 ring-1 ring-white/5 backdrop-blur-sm transition-all duration-300 ease-out hover:border-zinc-600 hover:ring-primary/20 hover:shadow-[0_0_20px_rgba(255,45,123,0.1)]",
           className
         )}
       >
@@ -60,7 +59,7 @@ export function OCCard({
               draggable
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
-              className="drag-handle shrink-0 cursor-grab rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted active:cursor-grabbing"
+              className="drag-handle shrink-0 cursor-grab rounded-md p-1 text-muted-foreground transition-colors hover:bg-white/10 active:cursor-grabbing"
               aria-label="Drag to reorder"
               onClick={(e) => {
                 e.preventDefault();
@@ -70,7 +69,7 @@ export function OCCard({
               <GripVertical className="size-4" />
             </div>
           )}
-          <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-muted sm:size-16 md:size-20">
+          <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-zinc-900 sm:size-16 md:size-20">
             {imageUrl ? (
               <Image
                 src={imageUrl}
@@ -89,9 +88,9 @@ export function OCCard({
             <h3 className="text-sm font-bold md:text-base">{oc.name}</h3>
             <div className="hidden flex-wrap items-center gap-1.5 text-xs text-muted-foreground md:flex">
               {species && <span>{species}</span>}
-              {species && gender && <span>•</span>}
+              {species && gender && <span className="text-white/20">&bull;</span>}
               {gender && <span>{gender}</span>}
-              {(species || gender) && age && <span>•</span>}
+              {(species || gender) && age && <span className="text-white/20">&bull;</span>}
               {age && <span>{age}</span>}
             </div>
             <div className="mt-1 hidden sm:block">
@@ -131,24 +130,24 @@ export function OCCard({
             </div>
           )}
         </Link>
-      </Card>
+      </div>
     );
   }
 
   return (
-    <Card
+    <div
       className={cn(
-        "group/card flex h-full flex-col overflow-hidden rounded-xl bg-card pt-0 ring-1 ring-foreground/10 transition-all hover:ring-primary/50 hover:shadow-lg hover:shadow-primary/5",
+        "group/card flex h-full flex-col overflow-hidden rounded-xl border border-zinc-800 bg-gradient-to-b from-zinc-950/60 to-zinc-950/30 ring-1 ring-white/5 backdrop-blur-sm transition-all duration-300 ease-out hover:border-zinc-600 hover:ring-primary/30 hover:shadow-[0_0_24px_rgba(255,45,123,0.12)]",
         className
       )}
     >
-      <Link href={`/oc/${oc.id}`} className="relative flex-1 overflow-hidden rounded-t-xl bg-muted">
+      <Link href={`/oc/${oc.id}`} className="relative flex-1 overflow-hidden rounded-t-xl bg-zinc-900">
         {draggable && (
           <div
             draggable
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
-            className="drag-handle absolute top-2 left-2 z-20 cursor-grab rounded-md bg-black/40 p-1 text-white backdrop-blur-sm transition-colors hover:bg-black/60 active:cursor-grabbing"
+            className="drag-handle absolute top-2 left-2 z-20 cursor-grab rounded-md bg-black/50 p-1 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 active:cursor-grabbing"
             aria-label="Drag to reorder"
             onClick={(e) => {
               e.preventDefault();
@@ -167,23 +166,23 @@ export function OCCard({
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
         ) : (
-          <div className="flex size-full items-center justify-center bg-muted text-2xl font-bold text-muted-foreground">
+          <div className="flex size-full items-center justify-center bg-zinc-900 text-2xl font-bold text-muted-foreground">
             {getInitials(oc.name)}
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-3">
           <h3 className="truncate text-lg font-bold text-white">{oc.name}</h3>
           <div className="flex flex-wrap items-center gap-1.5 text-xs text-white/80">
             {species && <span className="truncate">{species}</span>}
-            {species && gender && <span className="text-white/50">•</span>}
+            {species && gender && <span className="text-white/40">&bull;</span>}
             {gender && <span className="truncate">{gender}</span>}
-            {(species || gender) && age && <span className="text-white/50">•</span>}
+            {(species || gender) && age && <span className="text-white/40">&bull;</span>}
             {age && <span className="truncate">{age}</span>}
           </div>
         </div>
       </Link>
-      <CardContent className="flex flex-col gap-2 p-3">
+      <div className="flex flex-col gap-2 p-3">
         <TagPillList tags={oc.tags} max={2} />
         {showActions && (
           <div className="mt-auto flex items-center gap-2">
@@ -218,7 +217,7 @@ export function OCCard({
             Guest OC
           </Badge>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

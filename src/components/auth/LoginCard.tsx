@@ -7,6 +7,7 @@ import { Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { GlassCard } from "@/components/ui/glass-card";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { toast } from "sonner";
 
@@ -14,10 +15,10 @@ function SeparatorWithText({ text }: { text: string }) {
   return (
     <div className="relative">
       <div className="absolute inset-0 flex items-center">
-        <div className="w-full border-t border-border" />
+        <div className="w-full border-t border-white/10" />
       </div>
       <div className="relative flex justify-center">
-        <span className="bg-card px-2 text-xs uppercase tracking-wide text-muted-foreground">
+        <span className="bg-transparent px-2 text-xs uppercase tracking-wide text-muted-foreground">
           {text}
         </span>
       </div>
@@ -59,17 +60,20 @@ export function LoginCard() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
-      <div className="flex w-full max-w-sm flex-col gap-5 rounded-2xl border border-border bg-card p-8 ring-1 ring-foreground/10 shadow-[0_0_30px_rgba(255,45,123,0.12)]">
+    <main className="noise-bg flex min-h-screen flex-col items-center justify-center px-4 py-12">
+      <GlassCard className="w-full max-w-sm p-8 shadow-[0_8px_60px_rgba(255,45,123,0.1)]">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex size-20 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20 shadow-[0_0_20px_rgba(255,45,123,0.2)]">
-            <Image
-              src="/icon.avif"
-              alt="Unhinged"
-              width={64}
-              height={64}
-              className="size-16 object-contain"
-            />
+          <div className="relative">
+            <div className="absolute -inset-4 rounded-2xl bg-primary/20 blur-2xl" aria-hidden="true" />
+            <div className="relative flex size-20 items-center justify-center rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md">
+              <Image
+                src="/icon.avif"
+                alt="Unhinged"
+                width={64}
+                height={64}
+                className="size-16 object-contain"
+              />
+            </div>
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold">Welcome to Unhinged</h1>
@@ -77,13 +81,15 @@ export function LoginCard() {
           </div>
         </div>
 
-        <Button onClick={handleQuickTest} className="w-full">
+        <Button onClick={handleQuickTest} className="mt-4 w-full">
           Quick Test Login
         </Button>
 
-        <SeparatorWithText text="or sign in manually" />
+        <div className="mt-4">
+          <SeparatorWithText text="or sign in manually" />
+        </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="email">Email</Label>
             <div className="relative">
@@ -94,7 +100,7 @@ export function LoginCard() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="pl-9"
+                className="border-white/10 bg-white/5 pl-9 backdrop-blur-md focus:border-primary/50 focus:ring-primary/20"
                 required
               />
             </div>
@@ -109,7 +115,7 @@ export function LoginCard() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="pl-9"
+                className="border-white/10 bg-white/5 pl-9 backdrop-blur-md focus:border-primary/50 focus:ring-primary/20"
                 required
               />
             </div>
@@ -119,19 +125,21 @@ export function LoginCard() {
           </Button>
         </form>
 
-        <SeparatorWithText text="or" />
+        <div className="mt-4">
+          <SeparatorWithText text="or" />
+        </div>
 
-        <Button variant="outline" onClick={handleGoogle} className="w-full">
+        <Button variant="outline" onClick={handleGoogle} className="mt-4 w-full">
           Continue with Google
         </Button>
 
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
           <span>Don&apos;t have an account?</span>
           <Button variant="secondary" size="sm" onClick={() => router.push("/auth/signup")}>
             Sign up
           </Button>
         </div>
-      </div>
+      </GlassCard>
     </main>
   );
 }

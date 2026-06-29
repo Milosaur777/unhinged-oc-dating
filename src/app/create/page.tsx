@@ -223,7 +223,7 @@ function CreateOCLoading() {
   return (
     <>
       <DashboardHeader />
-      <main className="flex flex-1 items-center justify-center">Loading...</main>
+      <main className="flex flex-1 items-center justify-center pt-20 md:pt-24">Loading...</main>
     </>
   );
 }
@@ -721,7 +721,7 @@ function CreateOCForm() {
     return (
       <>
         <DashboardHeader />
-        <main className="flex flex-1 items-center justify-center">Loading...</main>
+        <main className="flex flex-1 items-center justify-center pt-20 md:pt-24">Loading...</main>
       </>
     );
   }
@@ -729,7 +729,7 @@ function CreateOCForm() {
   return (
     <>
       <DashboardHeader />
-      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6">
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 pt-20 md:pt-24">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">{editId ? "Edit OC" : "Create OC"}</h1>
           <Button variant="outline" onClick={handleRandomize} className="gap-2">
