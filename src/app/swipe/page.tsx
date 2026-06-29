@@ -180,7 +180,7 @@ export default function SwipePage() {
           </div>
 
           {candidates.length === 0 || currentIndex >= candidates.length ? (
-            <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+            <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl py-12 text-center">
               <Flame className="size-12 text-muted-foreground" />
               <h2 className="text-xl font-semibold">No more cards</h2>
               <p className="text-sm text-muted-foreground">
@@ -286,23 +286,23 @@ function MatchesSection({ userId }: { userId: string }) {
 
   return (
     <div className="flex flex-col gap-6 px-2 md:px-4">
-      <div className="flex flex-col gap-4">
-        <h2 className="text-2xl font-bold">Your Matches</h2>
-        <div className="relative max-w-md">
-          <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by Name / ID / Tag..."
-            className="pl-9"
-          />
+        <div className="flex flex-col gap-4">
+          <h2 className="text-2xl font-bold">Your Matches</h2>
+          <div className="relative max-w-md">
+            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by Name / ID / Tag..."
+              className="border-white/10 bg-white/[0.03] backdrop-blur-xl pl-9"
+            />
+          </div>
         </div>
-      </div>
 
       {dataLoading ? (
         <div className="text-sm text-muted-foreground">Loading matches...</div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] py-16">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl py-16">
           <Frown className="size-10 text-muted-foreground" />
           <p className="text-muted-foreground">No matches found.</p>
           {query ? (

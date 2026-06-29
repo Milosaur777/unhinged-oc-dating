@@ -63,7 +63,7 @@ export function TagPillList({ tags, max = 3, className, pillClassName }: TagPill
   const overflow = tagList.length - max;
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
+    <div className={cn("scrollbar-hide flex flex-nowrap items-center gap-1.5 overflow-x-auto pb-1", className)}>
       {visible.map((tag) => (
         <TagPill key={tag} className={pillClassName}>
           {tag}

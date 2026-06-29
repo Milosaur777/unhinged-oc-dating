@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MessageCircle, Trash2, Frown, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
@@ -116,7 +115,7 @@ export default function ChatListPage() {
         <h1 className="text-2xl font-bold">Chats</h1>
 
         {sessions.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-card/50 py-16 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl py-16 text-center">
             <MessageCircle className="size-12 text-muted-foreground" />
             <p className="text-muted-foreground">No chats yet.</p>
             <Link href="/swipe">
@@ -131,12 +130,12 @@ export default function ChatListPage() {
               const myImage = getPublicImageUrl(myOC?.image_url);
               const theirImage = getPublicImageUrl(theirOC?.image_url);
               return (
-                <Card
+                <div
                   key={session.id}
-                  className="group/card relative overflow-hidden transition-colors hover:border-primary/30"
+                  className="group/card relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-xl transition-all duration-300 ease-out hover:border-primary/30 hover:shadow-[0_0_16px_rgba(255,45,123,0.12)]"
                 >
                   <Link href={`/chat/${session.id}`} className="block">
-                    <CardContent className="flex items-center gap-4 p-4">
+                    <div className="flex items-center gap-4 p-4">
                       <div className="relative flex">
                         <div className="relative z-10 size-14 overflow-hidden rounded-full border-2 border-background bg-muted">
                           {myImage ? (
@@ -196,9 +195,9 @@ export default function ChatListPage() {
                       >
                         <Trash2 className="size-4 text-destructive" />
                       </Button>
-                    </CardContent>
+                    </div>
                   </Link>
-                </Card>
+                </div>
               );
             })}
           </div>

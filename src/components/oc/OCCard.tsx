@@ -49,7 +49,7 @@ export function OCCard({
     return (
       <div
         className={cn(
-          "group/card relative overflow-hidden rounded-xl border border-zinc-800 bg-gradient-to-b from-zinc-950/60 to-zinc-950/30 ring-1 ring-white/5 backdrop-blur-sm transition-all duration-300 ease-out hover:border-zinc-600 hover:ring-primary/20 hover:shadow-[0_0_20px_rgba(255,45,123,0.1)]",
+          "group/card relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-b from-zinc-950/60 to-zinc-950/30 ring-1 ring-white/5 backdrop-blur-sm transition-all duration-300 ease-out hover:border-primary/50 hover:shadow-[0_0_24px_rgba(255,45,123,0.25)]",
           className
         )}
       >
@@ -59,6 +59,7 @@ export function OCCard({
               draggable
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
+              onPointerDown={(e) => e.stopPropagation()}
               className="drag-handle shrink-0 cursor-grab rounded-md p-1 text-muted-foreground transition-colors hover:bg-white/10 active:cursor-grabbing"
               aria-label="Drag to reorder"
               onClick={(e) => {
@@ -137,7 +138,7 @@ export function OCCard({
   return (
     <div
       className={cn(
-        "group/card flex h-full flex-col overflow-hidden rounded-xl border border-zinc-800 bg-gradient-to-b from-zinc-950/60 to-zinc-950/30 ring-1 ring-white/5 backdrop-blur-sm transition-all duration-300 ease-out hover:border-zinc-600 hover:ring-primary/30 hover:shadow-[0_0_24px_rgba(255,45,123,0.12)]",
+        "group/card flex h-full flex-col overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-b from-zinc-950/60 to-zinc-950/30 ring-1 ring-white/5 backdrop-blur-sm transition-all duration-300 ease-out hover:border-primary/50 hover:shadow-[0_0_24px_rgba(255,45,123,0.25)]",
         className
       )}
     >
@@ -147,6 +148,7 @@ export function OCCard({
             draggable
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
+            onPointerDown={(e) => e.stopPropagation()}
             className="drag-handle absolute top-2 left-2 z-20 cursor-grab rounded-md bg-black/50 p-1 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/70 active:cursor-grabbing"
             aria-label="Drag to reorder"
             onClick={(e) => {

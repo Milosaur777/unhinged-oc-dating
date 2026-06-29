@@ -228,6 +228,7 @@ export default function DashboardPage() {
     if (!canReorder) return;
     setDraggingId(id);
     e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.dropEffect = "move";
   }
 
   function handleDragEnd() {
@@ -334,13 +335,13 @@ export default function DashboardPage() {
           {/* Creator banner */}
           <div
             className={cn(
-              "relative h-28 w-full overflow-hidden bg-background md:h-36",
+              "relative h-48 w-full overflow-hidden bg-background md:h-64",
               !headerUrl && "banner-gradient"
             )}
           >
             {headerUrl && (
               <>
-                <div className="absolute top-0 right-0 h-full w-full md:w-[60%]">
+                <div className="absolute top-0 right-0 h-full w-full md:w-[75%]">
                   <Image
                     src={headerUrl}
                     alt="Creator banner"
@@ -348,10 +349,10 @@ export default function DashboardPage() {
                     className="object-cover"
                     style={{ clipPath: "polygon(20% 0, 100% 0, 100% 100%, 0 100%)" }}
                     priority
-                    sizes="(max-width: 768px) 100vw, 60vw"
+                    sizes="(max-width: 768px) 100vw, 75vw"
                   />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-background via-background to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-background from-[30%] via-background/50 via-[60%] to-transparent" />
               </>
             )}
             <div className="absolute inset-x-0 bottom-0 px-4 py-4 md:px-6 md:py-5">
@@ -483,8 +484,8 @@ export default function DashboardPage() {
                         <div
                           key={`indicator-${index}`}
                           className={cn(
-                            "rounded bg-primary",
-                            view === "grid" ? "col-span-full h-1" : "h-1 w-full"
+                            "rounded bg-primary/80",
+                            view === "grid" ? "col-span-full h-1.5" : "h-1.5 w-full"
                           )}
                         />
                       );
@@ -516,8 +517,8 @@ export default function DashboardPage() {
                       <div
                         key="indicator-end"
                         className={cn(
-                          "rounded bg-primary",
-                          view === "grid" ? "col-span-full h-1" : "h-1 w-full"
+                          "rounded bg-primary/80",
+                          view === "grid" ? "col-span-full h-1.5" : "h-1.5 w-full"
                         )}
                       />
                     );
@@ -563,13 +564,14 @@ export default function DashboardPage() {
 
 type StatVariant = "default" | "pink" | "blue" | "purple";
 
-const STAT_VARIANTS: Record<StatVariant, { bg: string; icon: string; iconColor: string; glow: string; hoverGlow: string }> = {
+const STAT_VARIANTS: Record<StatVariant, { bg: string; icon: string; iconColor: string; glow: string; hoverGlow: string; hoverBorder: string }> = {
   default: {
     bg: "bg-primary/10",
     icon: "text-primary",
     iconColor: "text-primary",
     glow: "shadow-[0_0_20px_rgba(255,45,123,0.12)]",
     hoverGlow: "hover:shadow-[0_0_28px_rgba(255,45,123,0.25)]",
+    hoverBorder: "hover:border-primary/20",
   },
   pink: {
     bg: "bg-pink-500/10",
@@ -577,6 +579,7 @@ const STAT_VARIANTS: Record<StatVariant, { bg: string; icon: string; iconColor: 
     iconColor: "text-pink-400",
     glow: "shadow-[0_0_20px_rgba(236,72,153,0.12)]",
     hoverGlow: "hover:shadow-[0_0_28px_rgba(236,72,153,0.25)]",
+    hoverBorder: "hover:border-pink-500/20",
   },
   blue: {
     bg: "bg-blue-500/10",
@@ -584,6 +587,7 @@ const STAT_VARIANTS: Record<StatVariant, { bg: string; icon: string; iconColor: 
     iconColor: "text-blue-400",
     glow: "shadow-[0_0_20px_rgba(59,130,246,0.12)]",
     hoverGlow: "hover:shadow-[0_0_28px_rgba(59,130,246,0.25)]",
+    hoverBorder: "hover:border-blue-500/20",
   },
   purple: {
     bg: "bg-purple-500/10",
@@ -591,6 +595,7 @@ const STAT_VARIANTS: Record<StatVariant, { bg: string; icon: string; iconColor: 
     iconColor: "text-purple-400",
     glow: "shadow-[0_0_20px_rgba(168,85,247,0.12)]",
     hoverGlow: "hover:shadow-[0_0_28px_rgba(168,85,247,0.25)]",
+    hoverBorder: "hover:border-purple-500/20",
   },
 };
 
@@ -609,9 +614,10 @@ function StatCard({
   return (
     <div
       className={cn(
-        "group flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-2 backdrop-blur-xl ring-1 ring-white/5 transition-all duration-300 ease-out hover:scale-[1.02] hover:border-white/[0.15] sm:gap-3 sm:p-4",
+        "group flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-2 backdrop-blur-xl ring-1 ring-white/5 transition-all duration-300 ease-out hover:scale-[1.02] sm:gap-3 sm:p-4",
         style.glow,
-        style.hoverGlow
+        style.hoverGlow,
+        style.hoverBorder
       )}
     >
       <div className={cn("flex size-7 shrink-0 items-center justify-center rounded-lg sm:size-10", style.bg)}>
@@ -629,12 +635,12 @@ function CreateOCCard() {
   return (
     <Link
       href="/create"
-      className="group flex h-[420px] flex-col items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed border-white/15 bg-white/[0.02] backdrop-blur-xl transition-all duration-300 ease-out hover:border-primary/40 hover:bg-primary/5 hover:shadow-[0_0_32px_rgba(255,45,123,0.2)]"
+      className="group flex h-[420px] flex-col items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed border-primary/30 bg-white/[0.02] backdrop-blur-xl transition-all duration-300 ease-out hover:border-primary/40 hover:bg-primary/5 hover:shadow-[0_0_32px_rgba(255,45,123,0.2)]"
     >
-      <div className="flex size-14 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-all duration-300 group-hover:scale-110 group-hover:border-primary/30 group-hover:bg-primary/10">
-        <Plus className="size-7 text-muted-foreground transition-colors group-hover:text-primary" />
+      <div className="animate-pulse-glow flex size-14 items-center justify-center rounded-full border border-primary/30 bg-white/5 transition-all duration-300 group-hover:scale-110 group-hover:border-primary/30 group-hover:bg-primary/10">
+        <Plus className="size-7 text-primary transition-colors group-hover:text-primary" />
       </div>
-      <span className="text-sm font-semibold text-muted-foreground transition-colors group-hover:text-primary">Create New OC</span>
+      <span className="text-sm font-semibold text-primary/80 transition-colors group-hover:text-primary">Create New OC</span>
     </Link>
   );
 }
@@ -643,12 +649,12 @@ function CreateOCRow() {
   return (
     <Link
       href="/create"
-      className="group flex items-center gap-3 rounded-xl border border-dashed border-white/15 bg-white/[0.02] p-3 backdrop-blur-xl transition-all duration-300 ease-out hover:border-primary/40 hover:bg-primary/5 hover:shadow-[0_0_24px_rgba(255,45,123,0.2)]"
+      className="group flex items-center gap-3 rounded-xl border border-dashed border-primary/30 bg-white/[0.02] p-3 backdrop-blur-xl transition-all duration-300 ease-out hover:border-primary/40 hover:bg-primary/5 hover:shadow-[0_0_24px_rgba(255,45,123,0.2)]"
     >
-      <div className="flex size-10 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-all duration-300 group-hover:border-primary/30 group-hover:bg-primary/10">
-        <Plus className="size-5 text-muted-foreground transition-colors group-hover:text-primary" />
+      <div className="animate-pulse-glow flex size-10 items-center justify-center rounded-full border border-primary/30 bg-white/5 transition-all duration-300 group-hover:border-primary/30 group-hover:bg-primary/10">
+        <Plus className="size-5 text-primary transition-colors group-hover:text-primary" />
       </div>
-      <span className="text-sm font-semibold text-muted-foreground transition-colors group-hover:text-primary">Create New OC</span>
+      <span className="text-sm font-semibold text-primary/80 transition-colors group-hover:text-primary">Create New OC</span>
     </Link>
   );
 }

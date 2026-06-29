@@ -95,20 +95,17 @@ export function DashboardHeader() {
 
   return (
     <>
-      {/* Desktop: floating pill navbar */}
-      <header className="fixed top-4 left-1/2 z-50 hidden -translate-x-1/2 md:block">
-        <div className="flex items-center gap-1 rounded-full border border-white/10 bg-black/40 px-2 py-1.5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-          <Link href="/" className="flex items-center gap-2 pl-3 pr-2 text-lg font-bold text-foreground">
+      {/* Desktop: sticky top bar */}
+      <header className="sticky top-0 z-40 hidden border-b border-white/10 bg-background/95 backdrop-blur-sm md:block">
+        <div className="mx-auto flex h-14 max-w-7xl items-center px-4">
+          <Link href="/" className="flex items-center gap-2 pr-4 text-lg font-bold text-foreground">
             <Image
               src="/icon.avif"
               alt="Unhinged"
-              width={28}
-              height={28}
-              className="size-7 object-contain"
+              width={36}
+              height={36}
+              className="size-9 object-contain"
             />
-            <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-              Unhinged
-            </span>
           </Link>
 
           <nav className="flex items-center gap-0.5">
@@ -134,7 +131,7 @@ export function DashboardHeader() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-0.5 pl-1">
+          <div className="ml-auto flex items-center gap-0.5">
             <Tooltip>
               <TooltipTrigger
                 render={
@@ -164,13 +161,13 @@ export function DashboardHeader() {
                       pathname === "/creator" && "bg-white/10 text-foreground"
                     )}
                   >
-                    <Avatar size="sm" className="size-6">
+                    <Avatar size="sm" className="size-9">
                       <AvatarImage src={getPublicImageUrl(creatorAvatarUrl)} alt={creatorName || "Creator"} />
-                      <AvatarFallback className="text-[8px]">
-                        {creatorName ? getInitials(creatorName) : <User className="size-3" />}
+                      <AvatarFallback className="text-[10px]">
+                        {creatorName ? getInitials(creatorName) : <User className="size-3.5" />}
                       </AvatarFallback>
                     </Avatar>
-                    <ChevronDown className="size-3 opacity-50" />
+                    <ChevronDown className="size-4 opacity-70" />
                   </Button>
                 }
               />
@@ -215,20 +212,17 @@ export function DashboardHeader() {
         </div>
       </header>
 
-      {/* Mobile: fixed top bar */}
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-black/40 backdrop-blur-xl md:hidden">
+      {/* Mobile: sticky top bar */}
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-background/95 backdrop-blur-sm md:hidden">
         <div className="flex h-12 items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2 text-lg font-bold text-foreground">
             <Image
               src="/icon.avif"
               alt="Unhinged"
-              width={28}
-              height={28}
-              className="size-7 object-contain"
+              width={36}
+              height={36}
+              className="size-9 object-contain"
             />
-            <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-              Unhinged
-            </span>
           </Link>
 
           <div className="flex items-center gap-1">

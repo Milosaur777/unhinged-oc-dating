@@ -180,3 +180,14 @@
 .banner-gradient {
   background: var(--banner-gradient);
 }
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 45, 123, 0.3); transform: scale(1); }
+  50% { box-shadow: 0 0 20px rgba(255, 45, 123, 0.6); transform: scale(1.05); }
+}
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

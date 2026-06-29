@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Heart, X, Frown, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
@@ -112,7 +111,7 @@ export default function LikesPage() {
         <h1 className="text-2xl font-bold">Incoming Likes</h1>
 
         {likes.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-card/50 py-16 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl py-16 text-center">
             <Heart className="size-12 text-muted-foreground" />
             <p className="text-muted-foreground">No one has liked your OCs yet.</p>
             <Link href="/swipe">
@@ -128,7 +127,7 @@ export default function LikesPage() {
               {likes.map((like) => {
                 const imageUrl = getPublicImageUrl(like.liker_oc?.image_url);
                 return (
-                  <Card key={like.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+                  <div key={like.id} className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-4 sm:flex-row sm:items-center transition-all duration-300 ease-out hover:border-primary/30 hover:shadow-[0_0_16px_rgba(255,45,123,0.12)]">
                     <div className="flex items-center gap-3">
                       <div className="relative size-12 overflow-hidden rounded-full bg-muted">
                         {imageUrl ? (
@@ -170,7 +169,7 @@ export default function LikesPage() {
                         Like Back
                       </Button>
                     </div>
-                  </Card>
+                  </div>
                 );
               })}
             </div>
