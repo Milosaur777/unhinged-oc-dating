@@ -334,23 +334,28 @@ export default function DashboardPage() {
           {/* Creator banner */}
           <div
             className={cn(
-              "relative h-40 w-full overflow-hidden banner-gradient md:h-56",
-              headerUrl && "bg-none"
+              "relative h-28 w-full overflow-hidden bg-background md:h-36",
+              !headerUrl && "banner-gradient"
             )}
           >
             {headerUrl && (
-              <Image
-                src={headerUrl}
-                alt="Creator banner"
-                fill
-                className="object-cover"
-                priority
-                sizes="100vw"
-              />
+              <>
+                <div className="absolute top-0 right-0 h-full w-full md:w-[60%]">
+                  <Image
+                    src={headerUrl}
+                    alt="Creator banner"
+                    fill
+                    className="object-cover"
+                    style={{ clipPath: "polygon(20% 0, 100% 0, 100% 100%, 0 100%)" }}
+                    priority
+                    sizes="(max-width: 768px) 100vw, 60vw"
+                  />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-r from-background via-background to-transparent" />
+              </>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 px-4 py-4 md:px-6 md:py-6">
-              <h1 className="inline-flex items-center gap-2 text-3xl font-extrabold md:text-4xl">
+            <div className="absolute inset-x-0 bottom-0 px-4 py-4 md:px-6 md:py-5">
+              <h1 className="inline-flex items-center gap-2 text-4xl font-extrabold lg:text-5xl">
                 <span className="bg-gradient-to-r from-primary via-pink-400 to-purple-400 bg-clip-text text-transparent">
                   Your OCs
                 </span>
@@ -364,7 +369,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="flex flex-1 flex-col gap-6 px-6 py-6 md:px-8 lg:px-10">
+          <div className="flex flex-1 flex-col gap-6 px-4 py-6 md:px-6">
             {/* Stats */}
             <div className="relative w-full max-w-2xl">
               <div className="absolute -inset-4 rounded-3xl bg-primary/10 blur-3xl" aria-hidden="true" />
@@ -379,15 +384,16 @@ export default function DashboardPage() {
                   icon={MessageCircle}
                   label="Matches"
                   value={isGuest ? 0 : stats.matches}
+                  variant="blue"
                 />
-                <StatCard icon={Eye} label="Profile Views" value={0} />
+                <StatCard icon={Eye} label="Profile Views" value={0} variant="purple" />
               </div>
             </div>
 
             {/* Toolbar */}
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                <div className="relative flex-1 sm:min-w-56">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <div className="relative w-full sm:w-64">
                   <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     placeholder="Search OCs..."
@@ -490,7 +496,8 @@ export default function DashboardPage() {
                         data-card-id={oc.id}
                         onClick={saveDashboardScroll}
                         className={cn(
-                          "h-fit transition-all",
+                          "transition-all",
+                          view === "grid" ? "h-[420px]" : "h-fit",
                           draggingId === oc.id && "opacity-50"
                         )}
                       >
@@ -555,19 +562,45 @@ export default function DashboardPage() {
   );
 }
 
+type StatVariant = "default" | "blue" | "purple";
+
+const STAT_VARIANTS: Record<StatVariant, { bg: string; ring: string; icon: string; shadow: string }> = {
+  default: {
+    bg: "bg-primary/10",
+    ring: "ring-primary/20",
+    icon: "text-primary",
+    shadow: "shadow-[0_0_20px_rgba(255,45,123,0.15)]",
+  },
+  blue: {
+    bg: "bg-blue-500/10",
+    ring: "ring-blue-500/20",
+    icon: "text-blue-400",
+    shadow: "shadow-[0_0_20px_rgba(59,130,246,0.2)]",
+  },
+  purple: {
+    bg: "bg-purple-500/10",
+    ring: "ring-purple-500/20",
+    icon: "text-purple-400",
+    shadow: "shadow-[0_0_20px_rgba(168,85,247,0.2)]",
+  },
+};
+
 function StatCard({
   icon: Icon,
   label,
   value,
+  variant = "default",
 }: {
   icon: React.ElementType;
   label: string;
   value: number;
+  variant?: StatVariant;
 }) {
+  const style = STAT_VARIANTS[variant];
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-card/60 p-2 shadow-[0_0_20px_rgba(255,45,123,0.15)] backdrop-blur-md ring-1 ring-white/5 sm:gap-3 sm:p-4">
-      <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20 sm:size-10">
-        <Icon className="size-3.5 text-primary sm:size-5" />
+    <div className={cn("flex items-center gap-2 rounded-xl border border-white/10 bg-card/60 p-2 backdrop-blur-md ring-1 ring-white/5 sm:gap-3 sm:p-4", style.shadow)}>
+      <div className={cn("flex size-7 shrink-0 items-center justify-center rounded-lg sm:size-10", style.bg, style.ring)}>
+        <Icon className={cn("size-3.5 sm:size-5", style.icon)} />
       </div>
       <div className="min-w-0">
         <p className="text-base font-bold leading-none sm:text-2xl">{value}</p>
@@ -581,7 +614,7 @@ function CreateOCCard() {
   return (
     <Link
       href="/create"
-      className="group flex aspect-[3/4] flex-col items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed border-primary/40 bg-card/40 backdrop-blur-sm ring-1 ring-foreground/10 transition-all hover:border-primary hover:bg-primary/5 hover:shadow-[0_0_24px_rgba(255,45,123,0.25)]"
+      className="group flex h-[420px] flex-col items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed border-primary/40 bg-card/40 backdrop-blur-sm ring-1 ring-foreground/10 transition-all hover:border-primary hover:bg-primary/5 hover:shadow-[0_0_24px_rgba(255,45,123,0.25)]"
     >
       <div className="flex size-14 items-center justify-center rounded-full border border-primary/30 bg-primary/10 transition-all group-hover:scale-110 group-hover:border-primary/60 group-hover:bg-primary/20">
         <Plus className="size-7 text-primary" />

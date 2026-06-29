@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -29,7 +30,7 @@ import {
   toggleAllOCSwipable,
   uploadImage,
 } from "@/lib/supabase-queries";
-import { getPublicImageUrl, cn } from "@/lib/utils";
+import { getPublicImageUrl, cn, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function CreatorPage() {
@@ -40,7 +41,9 @@ export default function CreatorPage() {
   const [allSwipable, setAllSwipable] = useState(true);
   const [toggling, setToggling] = useState(false);
   const [uploadingHeader, setUploadingHeader] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const headerInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     username: "",
@@ -52,6 +55,7 @@ export default function CreatorPage() {
     creatorWebsite: "",
     creatorKofi: "",
     creatorHeaderUrl: "",
+    creatorAvatarUrl: "",
     creatorVisible: true,
     highContrast: false,
     textScaling: false,
@@ -81,6 +85,7 @@ export default function CreatorPage() {
           creatorWebsite: profileData?.creator_website || "",
           creatorKofi: "",
           creatorHeaderUrl: profileData?.creator_header_url || "",
+          creatorAvatarUrl: profileData?.creator_avatar_url || "",
           creatorVisible: profileData?.creator_visible ?? true,
           highContrast: false,
           textScaling: false,
@@ -113,6 +118,7 @@ export default function CreatorPage() {
         creator_discord: form.creatorDiscord,
         creator_website: form.creatorWebsite,
         creator_header_url: form.creatorHeaderUrl || null,
+        creator_avatar_url: form.creatorAvatarUrl || null,
         creator_visible: form.creatorVisible,
       });
       toast.success("Profile saved");
@@ -154,6 +160,40 @@ export default function CreatorPage() {
       toast.success("Banner removed");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to remove banner");
+    }
+  }
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user || isGuest) return;
+    setUploadingAvatar(true);
+    try {
+      const path = await uploadImage(file, "avatars");
+      setForm((prev) => ({ ...prev, creatorAvatarUrl: path }));
+      await upsertProfile({
+        id: user.id,
+        creator_avatar_url: path,
+      });
+      toast.success("Avatar uploaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to upload avatar");
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    if (!user || isGuest) return;
+    setForm((prev) => ({ ...prev, creatorAvatarUrl: "" }));
+    try {
+      await upsertProfile({
+        id: user.id,
+        creator_avatar_url: null,
+      });
+      toast.success("Avatar removed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to remove avatar");
     }
   }
 
@@ -267,6 +307,54 @@ export default function CreatorPage() {
           {uploadingHeader && (
             <p className="mt-2 text-sm text-muted-foreground">Uploading banner...</p>
           )}
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-6 ring-1 ring-foreground/10">
+          <h2 className="mb-4 text-lg font-semibold">Creator Avatar</h2>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Avatar className="size-20 ring-2 ring-primary/20">
+                <AvatarImage src={getPublicImageUrl(form.creatorAvatarUrl)} alt="Creator avatar" />
+                <AvatarFallback className="text-2xl font-bold">
+                  {form.creatorName ? getInitials(form.creatorName) : <User className="size-8 text-primary" />}
+                </AvatarFallback>
+              </Avatar>
+              {form.creatorAvatarUrl && (
+                <Button
+                  variant="destructive"
+                  size="icon-sm"
+                  onClick={handleRemoveAvatar}
+                  className="absolute -top-1 -right-1 size-6"
+                  aria-label="Remove avatar"
+                >
+                  <X className="size-3" />
+                </Button>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={uploadingAvatar}
+              >
+                <Upload className="size-4" />
+                {uploadingAvatar ? "Uploading..." : "Upload avatar"}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Recommended: square image, at least 256x256px.
+              </p>
+            </div>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+              aria-label="Upload creator avatar"
+            />
+          </div>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6 ring-1 ring-foreground/10">

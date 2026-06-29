@@ -31,9 +31,10 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { getIncomingLikes } from "@/lib/supabase-queries";
-import { cn } from "@/lib/utils";
+import { getIncomingLikes, getProfile } from "@/lib/supabase-queries";
+import { cn, getPublicImageUrl, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
 
 const navLinks = [
@@ -49,6 +50,21 @@ export function DashboardHeader() {
   const router = useRouter();
   const [likesCount, setLikesCount] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [creatorAvatarUrl, setCreatorAvatarUrl] = useState<string | null>(null);
+  const [creatorName, setCreatorName] = useState<string>("");
+
+  useEffect(() => {
+    if (isGuest || !user || "is_guest" in user) return;
+    getProfile(user.id)
+      .then((profile) => {
+        setCreatorAvatarUrl(profile?.creator_avatar_url ?? null);
+        setCreatorName(profile?.creator_name || profile?.display_name || user.email || "");
+      })
+      .catch(() => {
+        setCreatorAvatarUrl(null);
+        setCreatorName(user.email || "");
+      });
+  }, [user, isGuest]);
 
   useEffect(() => {
     if (isGuest || !user || "is_guest" in user) {
@@ -84,9 +100,9 @@ export function DashboardHeader() {
           <Image
             src="/icon.avif"
             alt="Unhinged"
-            width={24}
-            height={24}
-            className="size-6 object-contain"
+            width={36}
+            height={36}
+            className="size-9 object-contain"
           />
           <span className="hidden bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent md:inline">
             Unhinged
@@ -141,13 +157,18 @@ export function DashboardHeader() {
                 <Button
                   variant="ghost"
                   className={cn(
-                    "hidden items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex",
+                    "hidden items-center gap-2 px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex",
                     pathname === "/creator" &&
                       "bg-muted text-foreground ring-1 ring-primary/50 shadow-[0_0_12px_rgba(255,45,123,0.25)]"
                   )}
                 >
-                  <User className="size-4" />
-                  Creator
+                  <Avatar size="sm" className="size-7">
+                    <AvatarImage src={getPublicImageUrl(creatorAvatarUrl)} alt={creatorName || "Creator"} />
+                    <AvatarFallback>
+                      {creatorName ? getInitials(creatorName) : <User className="size-3.5" />}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span>Creator</span>
                   <ChevronDown className="size-3.5 opacity-50" />
                 </Button>
               }

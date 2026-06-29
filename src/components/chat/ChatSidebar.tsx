@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { PanelLeftClose, PanelLeftOpen, MessageCircle, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { getDashboardChats, DashboardChat } from "@/lib/supabase-queries";
 import { getPublicImageUrl, getInitials, cn } from "@/lib/utils";
@@ -84,7 +84,7 @@ export function ChatSidebar() {
       </ScrollArea>
 
       {!collapsed && (
-        <div className="border-t border-border p-3">
+        <div className="p-3">
           <div className="rounded-xl border border-white/10 bg-card/60 p-4 shadow-[0_0_20px_rgba(255,45,123,0.12)] backdrop-blur-md ring-1 ring-white/5">
             <p className="text-xs leading-relaxed text-muted-foreground">
               Do you like the app? Support it to help keep it running.
@@ -109,35 +109,36 @@ export function ChatSidebar() {
 
 function ChatCard({ chat, collapsed }: { chat: DashboardChat; collapsed: boolean }) {
   const partner = chat.partner_oc;
-  const imageUrl = getPublicImageUrl(partner?.image_url);
+  const myOc = chat.my_oc;
+  const partnerImage = getPublicImageUrl(partner?.image_url);
+  const myImage = getPublicImageUrl(myOc?.image_url);
 
   return (
     <Link
       href={`/chat/${chat.id}`}
       className={cn(
-        "group relative flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-muted",
-        collapsed && "justify-center"
+        "group relative flex items-center gap-3 rounded-xl border border-transparent bg-card/60 p-2.5 ring-1 ring-white/5 backdrop-blur-sm transition-all hover:border-primary/40 hover:bg-primary/5 hover:shadow-[0_0_16px_rgba(255,45,123,0.2)]",
+        collapsed && "justify-center border-white/10 p-2"
       )}
     >
       <div className="relative shrink-0">
-        <div className="relative size-10 overflow-hidden rounded-full border border-border bg-muted">
-          {imageUrl ? (
-            <Image
-              src={imageUrl}
-              alt={partner?.name || "Partner OC"}
-              fill
-              className="object-cover"
-              sizes="40px"
-            />
-          ) : (
-            <div className="flex size-full items-center justify-center text-xs font-bold">
-              {getInitials(partner?.name || "?")}
-            </div>
-          )}
-        </div>
+        <Avatar className="size-11 border border-border">
+          <AvatarImage src={partnerImage} alt={partner?.name || "Partner OC"} />
+          <AvatarFallback className="text-xs font-bold">
+            {getInitials(partner?.name || "?")}
+          </AvatarFallback>
+        </Avatar>
+        {!collapsed && (
+          <Avatar className="absolute -right-1 -bottom-1 size-5 ring-2 ring-card">
+            <AvatarImage src={myImage} alt={myOc?.name || "My OC"} />
+            <AvatarFallback className="text-[8px] font-bold">
+              {getInitials(myOc?.name || "?")}
+            </AvatarFallback>
+          </Avatar>
+        )}
         <span
           className={cn(
-            "absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-card",
+            "absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-card",
             chat.is_online ? "bg-green-500" : "bg-muted-foreground"
           )}
           aria-label={chat.is_online ? "Online" : "Offline"}
@@ -147,11 +148,17 @@ function ChatCard({ chat, collapsed }: { chat: DashboardChat; collapsed: boolean
       {!collapsed && (
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <p className="truncate text-sm font-medium">{partner?.name || "Unknown"}</p>
-            <Badge variant="secondary" className="shrink-0 px-1.5 py-0 text-[10px]">
+            <p className="truncate text-sm font-semibold text-foreground">{partner?.name || "Unknown"}</p>
+            <Badge
+              variant="secondary"
+              className="shrink-0 border border-primary/20 bg-primary/10 px-1.5 py-0 text-[10px] text-primary"
+            >
               Lv. {chat.chat_level}
             </Badge>
           </div>
+          <p className="truncate text-xs text-primary/80">
+            As {myOc?.name || "Unknown"}
+          </p>
           <p className="truncate text-xs text-muted-foreground">
             {chat.last_message || "No messages yet"}
           </p>

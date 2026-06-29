@@ -62,13 +62,13 @@ export function LoginCard() {
     <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
       <div className="flex w-full max-w-sm flex-col gap-5 rounded-2xl border border-border bg-card p-8 ring-1 ring-foreground/10 shadow-[0_0_30px_rgba(255,45,123,0.12)]">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex size-16 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20 shadow-[0_0_20px_rgba(255,45,123,0.2)]">
+          <div className="flex size-20 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20 shadow-[0_0_20px_rgba(255,45,123,0.2)]">
             <Image
               src="/icon.avif"
               alt="Unhinged"
-              width={40}
-              height={40}
-              className="size-10 object-contain"
+              width={64}
+              height={64}
+              className="size-16 object-contain"
             />
           </div>
           <div className="text-center">
