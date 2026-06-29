@@ -92,6 +92,7 @@ export type Database = {
       }
       chat_sessions: {
         Row: {
+          chat_level: number
           created_at: string | null
           id: string
           images_allowed: boolean | null
@@ -104,6 +105,7 @@ export type Database = {
           scene_name: string | null
         }
         Insert: {
+          chat_level?: number
           created_at?: string | null
           id?: string
           images_allowed?: boolean | null
@@ -116,6 +118,7 @@ export type Database = {
           scene_name?: string | null
         }
         Update: {
+          chat_level?: number
           created_at?: string | null
           id?: string
           images_allowed?: boolean | null
@@ -389,6 +392,7 @@ export type Database = {
           creator_avatar_url: string | null
           creator_bio: string | null
           creator_discord: string | null
+          creator_header_url: string | null
           creator_name: string | null
           creator_visible: boolean | null
           creator_website: string | null
@@ -404,6 +408,7 @@ export type Database = {
           creator_avatar_url?: string | null
           creator_bio?: string | null
           creator_discord?: string | null
+          creator_header_url?: string | null
           creator_name?: string | null
           creator_visible?: boolean | null
           creator_website?: string | null
@@ -419,6 +424,7 @@ export type Database = {
           creator_avatar_url?: string | null
           creator_bio?: string | null
           creator_discord?: string | null
+          creator_header_url?: string | null
           creator_name?: string | null
           creator_visible?: boolean | null
           creator_website?: string | null
@@ -473,7 +479,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_chat_level: { Args: { chat_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

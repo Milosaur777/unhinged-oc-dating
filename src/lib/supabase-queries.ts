@@ -21,6 +21,16 @@ export interface ChatSessionWithOCs extends ChatSession {
   oc2: OC | null;
 }
 
+export interface DashboardChat {
+  id: string;
+  chat_level: number;
+  my_oc: { id: string; name: string; image_url: string | null } | null;
+  partner_oc: { id: string; name: string; image_url: string | null } | null;
+  last_message: string | null;
+  last_active_at: string | null;
+  is_online: boolean;
+}
+
 export interface IncomingLike {
   id: string;
   from_oc_id: string;
@@ -55,6 +65,8 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   return data;
 }
 
+export const getUserProfile = getProfile;
+
 export async function upsertProfile(profile: TablesInsert<"profiles">) {
   const supabase = getClient();
   const { data, error } = await supabase
@@ -65,6 +77,8 @@ export async function upsertProfile(profile: TablesInsert<"profiles">) {
   if (error) throw error;
   return data;
 }
+
+export const updateProfile = upsertProfile;
 
 export async function getUserOCs(userId: string): Promise<OC[]> {
   const supabase = getClient();
@@ -376,6 +390,58 @@ export async function getChatSessions(userId: string): Promise<ChatSessionWithOC
   })) as ChatSessionWithOCs[];
 }
 
+export async function getDashboardChats(userId: string): Promise<DashboardChat[]> {
+  const supabase = getClient();
+  const { data: ocs } = await supabase.from("ocs").select("id").eq("user_id", userId);
+  const myOcIds = ocs?.map((o) => o.id) ?? [];
+  if (myOcIds.length === 0) return [];
+
+  const { data: sessions, error } = await supabase
+    .from("chat_sessions")
+    .select(
+      "id, chat_level, created_at, oc1_id, oc2_id, oc2_name, oc1:ocs!oc1_id(id, name, image_url), oc2:ocs!oc2_id(id, name, image_url)"
+    )
+    .or(`oc1_id.in.(${myOcIds.join(",")}),oc2_user_id.eq.${userId}`)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+
+  const sessionIds = (sessions ?? []).map((s) => s.id);
+  const lastMessages: Record<string, { text: string; created_at: string }> = {};
+
+  if (sessionIds.length > 0) {
+    const { data: messages } = await supabase
+      .from("chat_messages")
+      .select("chat_id, text, created_at")
+      .in("chat_id", sessionIds)
+      .order("created_at", { ascending: false });
+
+    const seen = new Set<string>();
+    (messages ?? []).forEach((m) => {
+      if (!seen.has(m.chat_id)) {
+        seen.add(m.chat_id);
+        lastMessages[m.chat_id] = { text: m.text, created_at: m.created_at ?? "" };
+      }
+    });
+  }
+
+  return (sessions ?? []).map((session) => {
+    const oc1 = (session.oc1 as unknown as { id: string; name: string; image_url: string | null } | null) ?? null;
+    const oc2 = (session.oc2 as unknown as { id: string; name: string; image_url: string | null } | null) ?? null;
+    const myOc = myOcIds.includes(session.oc1_id) ? oc1 : oc2;
+    const partnerOc = myOcIds.includes(session.oc1_id) ? oc2 : oc1;
+    const last = lastMessages[session.id];
+    return {
+      id: session.id,
+      chat_level: session.chat_level ?? 1,
+      my_oc: myOc,
+      partner_oc: partnerOc,
+      last_message: last?.text ?? null,
+      last_active_at: last?.created_at ?? session.created_at,
+      is_online: false,
+    };
+  });
+}
+
 export async function getChatMessages(chatId: string): Promise<ChatMessage[]> {
   const supabase = getClient();
   const { data, error } = await supabase
@@ -464,10 +530,10 @@ export async function toggleAllOCSwipable(userId: string, isSwipable: boolean) {
   if (error) throw error;
 }
 
-export async function uploadImage(file: File): Promise<string> {
+export async function uploadImage(file: File, prefix = "profile"): Promise<string> {
   const supabase = getClient();
   const ext = file.name.split(".").pop() ?? "png";
-  const path = `${crypto.randomUUID()}.${ext}`;
+  const path = `${prefix}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage.from("oc-images").upload(path, file);
   if (error) throw error;
   return path;

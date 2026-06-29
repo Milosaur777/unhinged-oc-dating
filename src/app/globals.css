@@ -52,6 +52,7 @@
   --background: #08080e;
   --foreground: #f8f8ff;
   --card: #1e1e3a;
+  --banner-gradient: linear-gradient(135deg, rgba(255, 45, 123, 0.3), rgba(123, 97, 255, 0.2), rgba(8, 8, 14, 1));
   --card-foreground: #f8f8ff;
   --popover: #1e1e3a;
   --popover-foreground: #f8f8ff;
@@ -113,4 +114,8 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #ff2d7b;
+}
+
+.banner-gradient {
+  background: var(--banner-gradient);
 }

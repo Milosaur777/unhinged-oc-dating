@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { MessageCircle, Trash2, Frown, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import {
@@ -169,10 +170,15 @@ export default function ChatListPage() {
                         </div>
                       </div>
                       <div className="flex-1">
-                        <p className="font-semibold">
-                          {myOC?.name} <ArrowRight className="mx-1 inline size-3.5 text-muted-foreground" />{" "}
-                          {theirOC?.name || session.oc2_name || "Unknown"}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold">
+                            {myOC?.name} <ArrowRight className="mx-1 inline size-3.5 text-muted-foreground" />{" "}
+                            {theirOC?.name || session.oc2_name || "Unknown"}
+                          </p>
+                          <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                            Lv. {session.chat_level ?? 1}
+                          </Badge>
+                        </div>
                         <p className="text-sm text-muted-foreground">
                           {session.scene_name || "Match"}
                         </p>

@@ -1,16 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { User, Save, Frown, Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
+import {
+  User,
+  Save,
+  Frown,
+  Eye,
+  EyeOff,
+  Upload,
+  X,
+  Accessibility,
+  Coffee,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { getProfile, upsertProfile, getUserOCs, toggleAllOCSwipable } from "@/lib/supabase-queries";
+import {
+  getProfile,
+  upsertProfile,
+  getUserOCs,
+  toggleAllOCSwipable,
+  uploadImage,
+} from "@/lib/supabase-queries";
+import { getPublicImageUrl, cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function CreatorPage() {
@@ -20,6 +39,8 @@ export default function CreatorPage() {
   const [saving, setSaving] = useState(false);
   const [allSwipable, setAllSwipable] = useState(true);
   const [toggling, setToggling] = useState(false);
+  const [uploadingHeader, setUploadingHeader] = useState(false);
+  const headerInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     username: "",
@@ -29,7 +50,11 @@ export default function CreatorPage() {
     creatorBio: "",
     creatorDiscord: "",
     creatorWebsite: "",
+    creatorKofi: "",
+    creatorHeaderUrl: "",
     creatorVisible: true,
+    highContrast: false,
+    textScaling: false,
   });
 
   useEffect(() => {
@@ -54,7 +79,11 @@ export default function CreatorPage() {
           creatorBio: profileData?.creator_bio || "",
           creatorDiscord: profileData?.creator_discord || "",
           creatorWebsite: profileData?.creator_website || "",
+          creatorKofi: "",
+          creatorHeaderUrl: profileData?.creator_header_url || "",
           creatorVisible: profileData?.creator_visible ?? true,
+          highContrast: false,
+          textScaling: false,
         });
         setAllSwipable(ocs.every((o) => o.is_swipable));
       } catch (err) {
@@ -83,6 +112,7 @@ export default function CreatorPage() {
         creator_bio: form.creatorBio,
         creator_discord: form.creatorDiscord,
         creator_website: form.creatorWebsite,
+        creator_header_url: form.creatorHeaderUrl || null,
         creator_visible: form.creatorVisible,
       });
       toast.success("Profile saved");
@@ -90,6 +120,40 @@ export default function CreatorPage() {
       toast.error(err instanceof Error ? err.message : "Failed to save profile");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleHeaderUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user || isGuest) return;
+    setUploadingHeader(true);
+    try {
+      const path = await uploadImage(file, "headers");
+      setForm((prev) => ({ ...prev, creatorHeaderUrl: path }));
+      await upsertProfile({
+        id: user.id,
+        creator_header_url: path,
+      });
+      toast.success("Banner uploaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to upload banner");
+    } finally {
+      setUploadingHeader(false);
+      if (headerInputRef.current) headerInputRef.current.value = "";
+    }
+  }
+
+  async function handleRemoveHeader() {
+    if (!user || isGuest) return;
+    setForm((prev) => ({ ...prev, creatorHeaderUrl: "" }));
+    try {
+      await upsertProfile({
+        id: user.id,
+        creator_header_url: null,
+      });
+      toast.success("Banner removed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to remove banner");
     }
   }
 
@@ -141,6 +205,8 @@ export default function CreatorPage() {
     );
   }
 
+  const headerUrl = getPublicImageUrl(form.creatorHeaderUrl);
+
   return (
     <>
       <DashboardHeader />
@@ -153,6 +219,54 @@ export default function CreatorPage() {
             <h1 className="text-2xl font-bold">Creator Profile</h1>
             <p className="text-sm text-muted-foreground">Manage how others see you.</p>
           </div>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-6 ring-1 ring-foreground/10">
+          <h2 className="mb-4 text-lg font-semibold">Creator Banner</h2>
+          <div
+            className={cn(
+              "relative flex h-40 w-full items-center justify-center overflow-hidden rounded-xl border border-border bg-muted",
+              headerUrl && "bg-none"
+            )}
+          >
+            {headerUrl ? (
+              <>
+                <Image
+                  src={headerUrl}
+                  alt="Creator banner preview"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 672px"
+                />
+                <div className="absolute inset-0 bg-black/30" />
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleRemoveHeader}
+                  className="absolute top-2 right-2 gap-1"
+                >
+                  <X className="size-4" />
+                  Remove
+                </Button>
+              </>
+            ) : (
+              <div className="text-center">
+                <Upload className="mx-auto size-8 text-muted-foreground" />
+                <p className="mt-2 text-sm text-muted-foreground">Upload a banner image</p>
+              </div>
+            )}
+            <input
+              ref={headerInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleHeaderUpload}
+              className="absolute inset-0 cursor-pointer opacity-0"
+              aria-label="Upload creator banner"
+            />
+          </div>
+          {uploadingHeader && (
+            <p className="mt-2 text-sm text-muted-foreground">Uploading banner...</p>
+          )}
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6 ring-1 ring-foreground/10">
@@ -220,6 +334,23 @@ export default function CreatorPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <Label htmlFor="creatorKofi">
+                <span className="inline-flex items-center gap-1.5">
+                  <Coffee className="size-4" />
+                  Ko-Fi Link
+                </span>
+              </Label>
+              <Input
+                id="creatorKofi"
+                value={form.creatorKofi}
+                onChange={(e) => update("creatorKofi", e.target.value)}
+                placeholder="https://ko-fi.com/..."
+              />
+              <p className="text-xs text-muted-foreground">
+                Placeholder — will be wired to your creator card in a future update.
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
               <Label htmlFor="creatorBio">Creator Bio</Label>
               <Textarea
                 id="creatorBio"
@@ -241,6 +372,41 @@ export default function CreatorPage() {
               {form.creatorVisible ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
               {form.creatorVisible ? "Visible" : "Hidden"}
             </Button>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-6 ring-1 ring-foreground/10">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+            <Accessibility className="size-5" />
+            Accessibility
+          </h2>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="font-medium">High contrast</p>
+                <p className="text-sm text-muted-foreground">
+                  Increase contrast across the interface.
+                </p>
+              </div>
+              <Switch
+                checked={form.highContrast}
+                onCheckedChange={(v) => update("highContrast", v)}
+                aria-label="High contrast"
+              />
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="font-medium">Text scaling</p>
+                <p className="text-sm text-muted-foreground">
+                  Enlarge body text for better readability.
+                </p>
+              </div>
+              <Switch
+                checked={form.textScaling}
+                onCheckedChange={(v) => update("textScaling", v)}
+                aria-label="Text scaling"
+              />
+            </div>
           </div>
         </div>
 

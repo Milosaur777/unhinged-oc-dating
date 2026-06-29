@@ -4,9 +4,25 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu, LogOut, Heart, Flame, MessageCircle, Home, User } from "lucide-react";
+import {
+  Menu,
+  LogOut,
+  Heart,
+  Flame,
+  MessageCircle,
+  Home,
+  User,
+  Bell,
+  ChevronDown,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { getIncomingLikes } from "@/lib/supabase-queries";
 import { cn } from "@/lib/utils";
@@ -27,25 +43,25 @@ export function DashboardHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-        if (isGuest || !user || "is_guest" in user) {
-          return;
-        }
-        const realUser = user;
+    if (isGuest || !user || "is_guest" in user) {
+      return;
+    }
+    const realUser = user;
 
-        async function load() {
-          try {
-            const supabaseModule = await import("@/lib/supabase");
-            const supabase = supabaseModule.createClient();
-            const { data: ocs } = await supabase.from("ocs").select("id").eq("user_id", realUser.id);
-            const ids = ocs?.map((o) => o.id) ?? [];
-            if (ids.length === 0) return;
-            const likes = await getIncomingLikes(ids);
-            setLikesCount(likes.length);
-          } catch {
-            setLikesCount(0);
-          }
-        }
-        load();
+    async function load() {
+      try {
+        const supabaseModule = await import("@/lib/supabase");
+        const supabase = supabaseModule.createClient();
+        const { data: ocs } = await supabase.from("ocs").select("id").eq("user_id", realUser.id);
+        const ids = ocs?.map((o) => o.id) ?? [];
+        if (ids.length === 0) return;
+        const likes = await getIncomingLikes(ids);
+        setLikesCount(likes.length);
+      } catch {
+        setLikesCount(0);
+      }
+    }
+    load();
   }, [user, isGuest]);
 
   async function handleLogout() {
@@ -89,16 +105,50 @@ export function DashboardHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/creator"
-            className={cn(
-              "hidden items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex",
-              pathname === "/creator" && "bg-muted text-foreground"
-            )}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="relative"
+            aria-label="Notifications"
           >
-            <User className="size-4" />
-            Creator
-          </Link>
+            <Bell className="size-4" />
+            {likesCount > 0 && (
+              <span className="absolute top-1 right-1 size-2 rounded-full bg-primary" />
+            )}
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "hidden items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:flex",
+                    pathname === "/creator" && "bg-muted text-foreground"
+                  )}
+                >
+                  <User className="size-4" />
+                  Creator
+                  <ChevronDown className="size-3.5 opacity-50" />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem
+                render={
+                  <Link href="/creator" className="cursor-pointer">
+                    <User className="mr-2 size-4" />
+                    Profile
+                  </Link>
+                }
+              />
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                <LogOut className="mr-2 size-4" />
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button
             variant="ghost"
             size="icon-sm"
