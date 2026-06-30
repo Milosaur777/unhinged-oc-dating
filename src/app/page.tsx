@@ -65,14 +65,25 @@ const SORT_LABELS: Record<SortOption, string> = {
   "created-oldest": "Oldest",
 };
 
-const MOBILE_OFFSET_PATHS = new Set([
-  "/headers/Abstract.avif",
-  "/headers/Alchemist.avif",
-  "/headers/Beach.avif",
-  "/headers/Church.avif",
-  "/headers/MasterBedroom.avif",
-  "/headers/PrisonCell.avif",
-]);
+const MOBILE_OFFSETS: Record<string, number> = {
+  "/headers/Abstract.avif": 70,
+  "/headers/Alchemist.avif": 70,
+  "/headers/Beach.avif": 70,
+  "/headers/Bedroom.avif": 95,
+  "/headers/Cantina.avif": 90,
+  "/headers/Church.avif": 68,
+  "/headers/Dungeon.avif": 95,
+  "/headers/Forest.avif": 90,
+  "/headers/Gala.avif": 55,
+  "/headers/MasterBedroom.avif": 60,
+  "/headers/Mine.avif": 95,
+  "/headers/NeonBar.avif": 65,
+  "/headers/OasisParty.avif": 70,
+  "/headers/PrisonCell.avif": 65,
+  "/headers/Shrine.avif": 75,
+  "/headers/Study.avif": 75,
+  "/headers/Tavern.avif": 95,
+};
 
 function getFieldValue(oc: OCWithDetails, key: string): string | null {
   return oc.fields.find((f) => f.field_key === key)?.value ?? null;
@@ -359,7 +370,8 @@ export default function DashboardPage() {
                     src={headerUrl}
                     alt="Creator banner"
                     fill
-                    className={cn("object-cover object-right-top md:object-right-top", MOBILE_OFFSET_PATHS.has(headerUrl) && "header-mobile-offset")}
+                    className={cn("object-cover object-right-top md:object-right-top", MOBILE_OFFSETS[headerUrl] != null && "header-mobile-offset")}
+                    style={MOBILE_OFFSETS[headerUrl] != null ? { "--mobile-offset": `${MOBILE_OFFSETS[headerUrl]}%` } as React.CSSProperties : undefined}
                     priority
                     sizes="100vw"
                     draggable={false}

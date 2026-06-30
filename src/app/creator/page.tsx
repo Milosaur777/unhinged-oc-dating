@@ -34,33 +34,44 @@ import {
 import { getPublicImageUrl, cn, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
 
-const MOBILE_OFFSET_PATHS = new Set([
-  "/headers/Abstract.avif",
-  "/headers/Alchemist.avif",
-  "/headers/Beach.avif",
-  "/headers/Church.avif",
-  "/headers/MasterBedroom.avif",
-  "/headers/PrisonCell.avif",
-]);
+const MOBILE_OFFSETS: Record<string, number> = {
+  "/headers/Abstract.avif": 70,
+  "/headers/Alchemist.avif": 70,
+  "/headers/Beach.avif": 70,
+  "/headers/Bedroom.avif": 95,
+  "/headers/Cantina.avif": 90,
+  "/headers/Church.avif": 68,
+  "/headers/Dungeon.avif": 95,
+  "/headers/Forest.avif": 90,
+  "/headers/Gala.avif": 55,
+  "/headers/MasterBedroom.avif": 60,
+  "/headers/Mine.avif": 95,
+  "/headers/NeonBar.avif": 65,
+  "/headers/OasisParty.avif": 70,
+  "/headers/PrisonCell.avif": 65,
+  "/headers/Shrine.avif": 75,
+  "/headers/Study.avif": 75,
+  "/headers/Tavern.avif": 95,
+};
 
 const PRESET_HEADERS = [
-  { name: "Abstract", path: "/headers/Abstract.avif", mobileOffset: true },
-  { name: "Alchemist", path: "/headers/Alchemist.avif", mobileOffset: true },
-  { name: "Beach", path: "/headers/Beach.avif", mobileOffset: true },
+  { name: "Abstract", path: "/headers/Abstract.avif" },
+  { name: "Alchemist", path: "/headers/Alchemist.avif" },
+  { name: "Beach", path: "/headers/Beach.avif" },
   { name: "Bedroom", path: "/headers/Bedroom.avif" },
   { name: "Cantina", path: "/headers/Cantina.avif" },
-  { name: "Church", path: "/headers/Church.avif", mobileOffset: true },
+  { name: "Church", path: "/headers/Church.avif" },
   { name: "Dungeon", path: "/headers/Dungeon.avif" },
   { name: "Forest", path: "/headers/Forest.avif" },
   { name: "Gala", path: "/headers/Gala.avif" },
   { name: "Infinity Pool", path: "/headers/InfinityPoolPenthouse.avif" },
   { name: "Lux Sofa", path: "/headers/LuxSofa.avif" },
-  { name: "Master Bedroom", path: "/headers/MasterBedroom.avif", mobileOffset: true },
+  { name: "Master Bedroom", path: "/headers/MasterBedroom.avif" },
   { name: "Mine", path: "/headers/Mine.avif" },
   { name: "Neon Bar", path: "/headers/NeonBar.avif" },
   { name: "Nightsky", path: "/headers/Nightsky.avif" },
   { name: "Oasis Party", path: "/headers/OasisParty.avif" },
-  { name: "Prison Cell", path: "/headers/PrisonCell.avif", mobileOffset: true },
+  { name: "Prison Cell", path: "/headers/PrisonCell.avif" },
   { name: "Shrine", path: "/headers/Shrine.avif" },
   { name: "Study", path: "/headers/Study.avif" },
   { name: "Tavern", path: "/headers/Tavern.avif" },
@@ -368,7 +379,8 @@ export default function CreatorPage() {
                         src={h.path}
                         alt={h.name}
                         fill
-                    className={cn("object-cover object-right-top md:object-cover", MOBILE_OFFSET_PATHS.has(form.creatorHeaderUrl) && "header-mobile-offset")}
+                    className={cn("object-cover object-right-top md:object-cover", MOBILE_OFFSETS[form.creatorHeaderUrl] != null && "header-mobile-offset")}
+                    style={MOBILE_OFFSETS[form.creatorHeaderUrl] != null ? { "--mobile-offset": `${MOBILE_OFFSETS[form.creatorHeaderUrl]}%` } as React.CSSProperties : undefined}
                         sizes="120px"
                         draggable={false}
                       />

@@ -212,6 +212,6 @@
 
 @media (max-width: 767px) {
   .header-mobile-offset {
-    object-position: 75% top !important;
+    object-position: var(--mobile-offset, 75%) top !important;
   }
 }
