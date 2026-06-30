@@ -49,7 +49,7 @@ const useCases = [
   {
     icon: Shield,
     title: "Server costs",
-    desc: "Keep the app fast and online 24/7.",
+    desc: "Database space, domain, and hosting.",
   },
   {
     icon: Rocket,

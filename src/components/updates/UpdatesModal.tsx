@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -76,16 +76,43 @@ const typeConfig = {
   status: { icon: TrendingUp, label: "Status", color: "text-blue-400" },
 };
 
+const LATEST_UPDATE_DATE = updates[0]?.date ?? "2026-06-30";
+const STORAGE_KEY = "unhinged_updates_seen";
+
 interface UpdatesModalProps {
   children: React.ReactElement;
 }
 
 export function UpdatesModal({ children }: UpdatesModalProps) {
   const [open, setOpen] = useState(false);
+  const [hasSeen, setHasSeen] = useState(true);
+
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem(STORAGE_KEY);
+      setHasSeen(seen === LATEST_UPDATE_DATE);
+    } catch {
+      setHasSeen(true);
+    }
+  }, []);
+
+  const handleOpenChange = useCallback((nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (nextOpen) {
+      try {
+        localStorage.setItem(STORAGE_KEY, LATEST_UPDATE_DATE);
+        setHasSeen(true);
+      } catch {}
+    }
+  }, []);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={children} />
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger render={children}>
+        {!hasSeen && (
+          <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(255,45,123,0.8)]" />
+        )}
+      </DialogTrigger>
       <DialogContent className="max-h-[85vh] w-[95vw] max-w-md overflow-hidden p-0 sm:max-w-lg">
         <DialogHeader className="border-b border-white/10 px-5 py-4">
           <DialogTitle className="flex items-center gap-2 text-lg">

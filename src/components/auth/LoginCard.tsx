@@ -73,6 +73,7 @@ export function LoginCard() {
                 className="object-cover"
                 sizes="80px"
               />
+              <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 via-transparent to-transparent" />
             </div>
           </div>
           <div className="text-center">

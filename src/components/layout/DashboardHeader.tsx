@@ -110,7 +110,7 @@ export function DashboardHeader() {
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
-                <span key={link.href} className="relative">
+                <span key={link.href} className="relative overflow-hidden">
                   <Link
                     href={link.href}
                     className={cn(
@@ -145,9 +145,6 @@ export function DashboardHeader() {
                 aria-label="Updates & announcements"
               >
                 <Bell className="size-4" />
-                {likesCount > 0 && (
-                  <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(255,45,123,0.8)]" />
-                )}
               </Button>
             </UpdatesModal>
 
@@ -229,7 +226,7 @@ export function DashboardHeader() {
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
-                <span key={link.href} className="relative">
+                <span key={link.href} className="relative overflow-hidden">
                   <Link
                     href={link.href}
                     className={cn(
@@ -282,11 +279,6 @@ export function DashboardHeader() {
                   <button className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-muted-foreground hover:bg-white/5">
                     <Bell className="mr-2 size-4" />
                     Notifications
-                    {likesCount > 0 && (
-                      <span className="ml-auto flex min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
-                        {likesCount > 99 ? "99+" : likesCount}
-                      </span>
-                    )}
                   </button>
                 </UpdatesModal>
                 <DropdownMenuItem
