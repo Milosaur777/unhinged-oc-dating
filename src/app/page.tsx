@@ -350,7 +350,7 @@ export default function DashboardPage() {
                     src={headerUrl}
                     alt="Creator banner"
                     fill
-                    className="object-contain object-right-top md:object-cover md:object-right-top"
+                    className="object-cover object-right-top md:object-right-top"
                     priority
                     sizes="100vw"
                     draggable={false}
