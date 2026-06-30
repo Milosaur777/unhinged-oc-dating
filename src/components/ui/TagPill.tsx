@@ -13,7 +13,7 @@ export function TagPill({ children, className, onRemove, removeLabel }: TagPillP
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border border-primary/60 bg-[#1a1a3e]/90 px-2.5 py-0.5 text-xs font-medium text-primary shadow-[0_0_8px_rgba(255,45,123,0.25)] backdrop-blur-sm transition-all",
+        "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-primary/60 bg-[#1a1a3e]/90 px-2.5 py-0.5 text-xs font-medium text-primary shadow-[0_0_8px_rgba(255,45,123,0.25)] backdrop-blur-sm transition-all",
         className
       )}
     >
@@ -57,10 +57,10 @@ interface TagPillListProps {
   pillClassName?: string;
 }
 
-export function TagPillList({ tags, max = 3, className, pillClassName }: TagPillListProps) {
+export function TagPillList({ tags, max, className, pillClassName }: TagPillListProps) {
   const tagList = tags ?? [];
-  const visible = tagList.slice(0, max);
-  const overflow = tagList.length - max;
+  const visible = max ? tagList.slice(0, max) : tagList;
+  const overflow = max ? tagList.length - max : 0;
 
   return (
     <div className={cn("scrollbar-hide flex flex-nowrap items-center gap-1.5 overflow-x-auto pb-1", className)}>

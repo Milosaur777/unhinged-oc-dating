@@ -65,13 +65,13 @@ export function LoginCard() {
         <div className="flex flex-col items-center gap-3">
           <div className="relative">
             <div className="absolute -inset-4 rounded-2xl bg-primary/20 blur-2xl" aria-hidden="true" />
-            <div className="relative flex size-20 items-center justify-center rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md">
+            <div className="relative flex size-20 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md">
               <Image
                 src="/icon.avif"
                 alt="Unhinged"
-                width={64}
-                height={64}
-                className="size-16 object-contain"
+                fill
+                className="object-contain p-1"
+                sizes="80px"
               />
             </div>
           </div>

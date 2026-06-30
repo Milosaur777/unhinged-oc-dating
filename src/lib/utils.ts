@@ -56,7 +56,7 @@ export function getInitials(name: string): string {
 
 export function getPublicImageUrl(path: string | null | undefined): string {
   if (!path) return "";
-  if (path.startsWith("http")) return path;
+  if (path.startsWith("http") || path.startsWith("/")) return path;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   return `${supabaseUrl}/storage/v1/object/public/oc-images/${path}`;
 }

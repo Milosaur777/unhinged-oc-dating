@@ -29,9 +29,33 @@ import {
   getUserOCs,
   toggleAllOCSwipable,
   uploadImage,
+  clearProfileField,
 } from "@/lib/supabase-queries";
 import { getPublicImageUrl, cn, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
+
+const PRESET_HEADERS = [
+  { name: "Abstract", path: "/headers/Abstract.avif" },
+  { name: "Alchemist", path: "/headers/Alchemist.avif" },
+  { name: "Beach", path: "/headers/Beach.avif" },
+  { name: "Beach 2", path: "/headers/Beach2.avif" },
+  { name: "Beach Picnic", path: "/headers/BeachPicnic.avif" },
+  { name: "Bedroom", path: "/headers/Bedroom.avif" },
+  { name: "Cantina", path: "/headers/Cantina.avif" },
+  { name: "Church", path: "/headers/Church.avif" },
+  { name: "Dungeon", path: "/headers/Dungeon.avif" },
+  { name: "Gala", path: "/headers/Gala.avif" },
+  { name: "Infinity Pool", path: "/headers/InfinityPoolPenthouse.avif" },
+  { name: "Library", path: "/headers/Library.avif" },
+  { name: "Lux Sofa", path: "/headers/LuxSofa.avif" },
+  { name: "Master Bedroom", path: "/headers/MasterBedroom.avif" },
+  { name: "Neon Bar", path: "/headers/NeonBar.avif" },
+  { name: "Nightsky", path: "/headers/Nightsky.avif" },
+  { name: "Oasis Party", path: "/headers/OasisParty.avif" },
+  { name: "Prison Cell", path: "/headers/PrisonCell.avif" },
+  { name: "Shrine", path: "/headers/Shrine.avif" },
+  { name: "Tavern", path: "/headers/Tavern.avif" },
+];
 
 export default function CreatorPage() {
   const router = useRouter();
@@ -136,11 +160,7 @@ export default function CreatorPage() {
     try {
       const path = await uploadImage(file, "headers");
       setForm((prev) => ({ ...prev, creatorHeaderUrl: path }));
-      await upsertProfile({
-        id: user.id,
-        creator_header_url: path,
-      });
-      toast.success("Banner uploaded");
+      toast.success("Banner uploaded — click Save to apply");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to upload banner");
     } finally {
@@ -153,10 +173,7 @@ export default function CreatorPage() {
     if (!user || isGuest) return;
     setForm((prev) => ({ ...prev, creatorHeaderUrl: "" }));
     try {
-      await upsertProfile({
-        id: user.id,
-        creator_header_url: null,
-      });
+      await clearProfileField(user.id, "creator_header_url");
       toast.success("Banner removed");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to remove banner");
@@ -170,11 +187,7 @@ export default function CreatorPage() {
     try {
       const path = await uploadImage(file, "avatars");
       setForm((prev) => ({ ...prev, creatorAvatarUrl: path }));
-      await upsertProfile({
-        id: user.id,
-        creator_avatar_url: path,
-      });
-      toast.success("Avatar uploaded");
+      toast.success("Avatar uploaded — click Save to apply");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to upload avatar");
     } finally {
@@ -187,10 +200,7 @@ export default function CreatorPage() {
     if (!user || isGuest) return;
     setForm((prev) => ({ ...prev, creatorAvatarUrl: "" }));
     try {
-      await upsertProfile({
-        id: user.id,
-        creator_avatar_url: null,
-      });
+      await clearProfileField(user.id, "creator_avatar_url");
       toast.success("Avatar removed");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to remove avatar");
@@ -271,28 +281,51 @@ export default function CreatorPage() {
           >
             {headerUrl ? (
               <>
-                <Image
-                  src={headerUrl}
-                  alt="Creator banner preview"
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 672px"
-                />
-                <div className="absolute inset-0 bg-black/30" />
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleRemoveHeader}
-                  className="absolute top-2 right-2 gap-1"
+                <div
+                  className="absolute inset-0"
+                  onContextMenu={(e) => e.preventDefault()}
+                  onDragStart={(e) => e.preventDefault()}
+                  style={{ userSelect: "none" }}
                 >
-                  <X className="size-4" />
-                  Remove
-                </Button>
+                  <Image
+                    src={headerUrl}
+                    alt="Creator banner preview"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 672px"
+                    draggable={false}
+                  />
+                </div>
+                <div className="absolute inset-0 bg-black/30" />
+                <div className="absolute top-2 right-2 z-20 flex gap-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleRemoveHeader}
+                    className="gap-1"
+                  >
+                    <X className="size-4" />
+                    Remove
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => headerInputRef.current?.click()}
+                    disabled={uploadingHeader}
+                    className="gap-1"
+                  >
+                    <Upload className="size-4" />
+                    Change
+                  </Button>
+                </div>
               </>
             ) : (
-              <div className="text-center">
-                <Upload className="mx-auto size-8 text-muted-foreground" />
-                <p className="mt-2 text-sm text-muted-foreground">Upload a banner image</p>
+              <div
+                className="flex flex-col items-center gap-2"
+                onClick={() => headerInputRef.current?.click()}
+              >
+                <Upload className="size-8 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Upload a banner image</p>
               </div>
             )}
             <input
@@ -300,21 +333,57 @@ export default function CreatorPage() {
               type="file"
               accept="image/*"
               onChange={handleHeaderUpload}
-              className="absolute inset-0 cursor-pointer opacity-0"
+              className="hidden"
               aria-label="Upload creator banner"
             />
           </div>
           {uploadingHeader && (
             <p className="mt-2 text-sm text-muted-foreground">Uploading banner...</p>
           )}
+
+          {!headerUrl && (
+            <div className="mt-4">
+              <p className="mb-3 text-sm font-medium text-muted-foreground">Or choose a preset header:</p>
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                {PRESET_HEADERS.map((h) => (
+                  <button
+                    key={h.path}
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, creatorHeaderUrl: h.path }))}
+                    className="group relative flex flex-col overflow-hidden rounded-lg border border-border transition-all hover:border-primary/50 hover:ring-1 hover:ring-primary/30"
+                    onContextMenu={(e) => e.preventDefault()}
+                    onDragStart={(e) => e.preventDefault()}
+                  >
+                    <div className="relative aspect-[3/1] w-full">
+                      <Image
+                        src={h.path}
+                        alt={h.name}
+                        fill
+                        className="object-cover"
+                        sizes="120px"
+                        draggable={false}
+                      />
+                      <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
+                    </div>
+                    <span className="truncate px-1 py-0.5 text-[10px] text-muted-foreground group-hover:text-foreground">{h.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6 ring-1 ring-foreground/10">
           <h2 className="mb-4 text-lg font-semibold">Creator Avatar</h2>
           <div className="flex items-center gap-4">
-            <div className="relative">
+            <div
+              className="relative"
+              onContextMenu={(e) => e.preventDefault()}
+              onDragStart={(e) => e.preventDefault()}
+              style={{ userSelect: "none" }}
+            >
               <Avatar className="size-20 ring-2 ring-primary/20">
-                <AvatarImage src={getPublicImageUrl(form.creatorAvatarUrl)} alt="Creator avatar" />
+                <AvatarImage src={getPublicImageUrl(form.creatorAvatarUrl)} alt="Creator avatar" draggable={false} />
                 <AvatarFallback className="text-2xl font-bold">
                   {form.creatorName ? getInitials(form.creatorName) : <User className="size-8 text-primary" />}
                 </AvatarFallback>

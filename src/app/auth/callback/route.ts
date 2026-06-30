@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
       creator_name: null,
       creator_bio: null,
       creator_avatar_url: null,
+      creator_header_url: "/headers/Abstract.avif",
       creator_discord: null,
       creator_website: null,
       creator_visible: true,

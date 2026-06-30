@@ -16,8 +16,30 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Unhinged - OC Dating Platform",
-  description: "Match with original characters. Swipe, chat, and connect.",
+  title: "Unhinged - RP Dating Platform",
+  description: "Match with roleplaying characters, swipe, chat, and connect.",
+  openGraph: {
+    title: "Unhinged - RP Dating Platform",
+    description: "Match with roleplaying characters, swipe, chat, and connect.",
+    url: "https://unhinged-rp.vercel.app",
+    siteName: "Unhinged",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Unhinged - RP Dating Platform",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Unhinged - RP Dating Platform",
+    description: "Match with roleplaying characters, swipe, chat, and connect.",
+    images: ["/og-image.png"],
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "48x48" },

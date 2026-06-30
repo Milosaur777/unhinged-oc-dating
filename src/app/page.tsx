@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
   Plus,
-  Frown,
   Search,
   LayoutGrid,
   List,
@@ -341,30 +340,36 @@ export default function DashboardPage() {
           >
             {headerUrl && (
               <>
-                <div className="absolute top-0 right-0 h-full w-full md:w-[75%]">
+                <div
+                  className="absolute inset-0"
+                  onContextMenu={(e) => e.preventDefault()}
+                  onDragStart={(e) => e.preventDefault()}
+                  style={{ userSelect: "none" }}
+                >
                   <Image
                     src={headerUrl}
                     alt="Creator banner"
                     fill
-                    className="object-cover"
-                    style={{ clipPath: "polygon(20% 0, 100% 0, 100% 100%, 0 100%)" }}
+                    className="object-cover object-right md:object-right-top"
                     priority
-                    sizes="(max-width: 768px) 100vw, 75vw"
+                    sizes="100vw"
+                    draggable={false}
                   />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-background from-[30%] via-background/50 via-[60%] to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-background from-[20%] via-background/60 via-[50%] to-transparent md:from-[30%] md:via-[60%]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent md:via-transparent" />
               </>
             )}
             <div className="absolute inset-0 flex flex-col justify-between px-4 py-4 md:px-6 md:py-5">
               <div>
                 <h1 className="inline-flex items-center gap-2 text-4xl font-extrabold lg:text-5xl">
                   <span className="bg-gradient-to-r from-primary via-pink-400 to-purple-400 bg-clip-text text-transparent">
-                    Your OCs
+                    Your RP Characters
                   </span>
                 </h1>
                 <p className="text-sm text-muted-foreground/80">
                   {isGuest
-                    ? "Guest mode — your OCs are stored locally."
+                    ? "Guest mode — your characters are stored locally."
                     : "Manage, reorder, and preview your characters."}
                 </p>
               </div>
@@ -381,7 +386,7 @@ export default function DashboardPage() {
                   <StatCard icon={Heart} label="Total Likes" value={isGuest ? 0 : stats.totalLikes} variant="pink" />
                   <StatCard
                     icon={MessageCircle}
-                    label="Matches"
+                    label="Match"
                     value={isGuest ? 0 : stats.matches}
                     variant="blue"
                   />
@@ -454,12 +459,19 @@ export default function DashboardPage() {
 
             {/* OC grid/list */}
             {displayOcs.length === 0 ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] py-16">
-                <Frown className="size-12 text-muted-foreground" />
-                <p className="text-muted-foreground">No OCs found.</p>
-                <Link href="/create">
-                  <Button>Create your first OC</Button>
-                </Link>
+              <div
+                className={cn(
+                  "relative grid gap-5",
+                  view === "grid"
+                    ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+                    : "grid-cols-1 md:grid-cols-2"
+                )}
+              >
+                {view === "grid" ? (
+                  <CreateOCCard />
+                ) : (
+                  <CreateOCRow />
+                )}
               </div>
             ) : (
               <div
@@ -630,9 +642,9 @@ function StatCard({
       <div className={cn("flex size-7 shrink-0 items-center justify-center rounded-lg sm:size-10", style.bg)}>
         <Icon className={cn("size-3.5 sm:size-5", style.iconColor)} />
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-base font-bold leading-none sm:text-2xl">{value}</p>
-        <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground sm:mt-1 sm:text-xs">{label}</p>
+        <p className="mt-0.5 truncate text-[10px] leading-tight text-muted-foreground sm:mt-1 sm:text-xs">{label}</p>
       </div>
     </div>
   );
@@ -647,7 +659,7 @@ function CreateOCCard() {
       <div className="animate-pulse-glow flex size-14 items-center justify-center rounded-full border border-primary/30 bg-white/5 transition-all duration-300 group-hover:scale-110 group-hover:border-primary/30 group-hover:bg-primary/10">
         <Plus className="size-7 text-primary transition-colors group-hover:text-primary" />
       </div>
-      <span className="text-sm font-semibold text-primary/80 transition-colors group-hover:text-primary">Create New OC</span>
+      <span className="text-sm font-semibold text-primary/80 transition-colors group-hover:text-primary">Create new character</span>
     </Link>
   );
 }
@@ -656,12 +668,12 @@ function CreateOCRow() {
   return (
     <Link
       href="/create"
-      className="group flex items-center gap-3 rounded-xl border border-dashed border-primary/30 bg-white/[0.02] p-3 backdrop-blur-xl transition-all duration-300 ease-out hover:border-primary/40 hover:bg-primary/5 hover:shadow-[0_0_24px_rgba(255,45,123,0.2)]"
+      className="group flex items-center justify-center gap-3 rounded-xl border border-dashed border-primary/30 bg-white/[0.02] p-3 backdrop-blur-xl transition-all duration-300 ease-out hover:border-primary/40 hover:bg-primary/5 hover:shadow-[0_0_24px_rgba(255,45,123,0.2)]"
     >
       <div className="animate-pulse-glow flex size-10 items-center justify-center rounded-full border border-primary/30 bg-white/5 transition-all duration-300 group-hover:border-primary/30 group-hover:bg-primary/10">
         <Plus className="size-5 text-primary transition-colors group-hover:text-primary" />
       </div>
-      <span className="text-sm font-semibold text-primary/80 transition-colors group-hover:text-primary">Create New OC</span>
+      <span className="text-sm font-semibold text-primary/80 transition-colors group-hover:text-primary">Create new character</span>
     </Link>
   );
 }

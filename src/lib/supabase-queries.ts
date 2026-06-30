@@ -80,6 +80,16 @@ export async function upsertProfile(profile: TablesInsert<"profiles">) {
 
 export const updateProfile = upsertProfile;
 
+export async function clearProfileField(userId: string, field: "creator_header_url" | "creator_avatar_url") {
+  const supabase = getClient();
+  const update: Record<string, null> = { [field]: null };
+  const { error } = await supabase
+    .from("profiles")
+    .update(update as TablesUpdate<"profiles">)
+    .eq("id", userId);
+  if (error) throw error;
+}
+
 export async function getUserOCs(userId: string): Promise<OC[]> {
   const supabase = getClient();
   const { data, error } = await supabase
@@ -366,12 +376,13 @@ export async function createChatSession(
   oc2Name: string | null
 ): Promise<ChatSession> {
   const supabase = getClient();
+  const [firstId, secondId] = oc1Id < oc2Id ? [oc1Id, oc2Id] : [oc2Id, oc1Id];
   const { data, error } = await supabase
     .from("chat_sessions")
     .upsert(
       {
-        oc1_id: oc1Id,
-        oc2_id: oc2Id,
+        oc1_id: firstId,
+        oc2_id: secondId,
         oc2_user_id: oc2UserId,
         oc2_user_name: oc2UserName,
         oc2_name: oc2Name,
@@ -551,5 +562,6 @@ export async function uploadImage(file: File, prefix = "profile"): Promise<strin
   const path = `${prefix}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage.from("oc-images").upload(path, file);
   if (error) throw error;
-  return path;
+  const { data } = supabase.storage.from("oc-images").getPublicUrl(path);
+  return data.publicUrl;
 }

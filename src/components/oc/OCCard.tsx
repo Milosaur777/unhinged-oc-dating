@@ -94,7 +94,7 @@ export function OCCard({
               {age && <span>{age}</span>}
             </div>
             <div className="mt-1 hidden sm:block">
-              <TagPillList tags={oc.tags} max={3} />
+              <TagPillList tags={oc.tags} />
             </div>
           </div>
           {showActions && (
@@ -183,7 +183,7 @@ export function OCCard({
         </div>
       </Link>
       <div className="flex flex-col gap-2 p-3">
-        <TagPillList tags={oc.tags} max={2} />
+        <TagPillList tags={oc.tags} />
         {showActions && (
           <div className="mt-auto flex items-center gap-2">
             <Link href={`/create?edit=${oc.id}`} className="flex-1" onClick={(e) => e.stopPropagation()}>
