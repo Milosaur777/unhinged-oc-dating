@@ -209,3 +209,9 @@
 
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+@media (max-width: 767px) {
+  .header-mobile-offset {
+    object-position: 75% top !important;
+  }
+}

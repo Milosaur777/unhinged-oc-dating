@@ -34,24 +34,33 @@ import {
 import { getPublicImageUrl, cn, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
 
+const MOBILE_OFFSET_PATHS = new Set([
+  "/headers/Abstract.avif",
+  "/headers/Alchemist.avif",
+  "/headers/Beach.avif",
+  "/headers/Church.avif",
+  "/headers/MasterBedroom.avif",
+  "/headers/PrisonCell.avif",
+]);
+
 const PRESET_HEADERS = [
-  { name: "Abstract", path: "/headers/Abstract.avif" },
-  { name: "Alchemist", path: "/headers/Alchemist.avif" },
-  { name: "Beach", path: "/headers/Beach.avif" },
+  { name: "Abstract", path: "/headers/Abstract.avif", mobileOffset: true },
+  { name: "Alchemist", path: "/headers/Alchemist.avif", mobileOffset: true },
+  { name: "Beach", path: "/headers/Beach.avif", mobileOffset: true },
   { name: "Bedroom", path: "/headers/Bedroom.avif" },
   { name: "Cantina", path: "/headers/Cantina.avif" },
-  { name: "Church", path: "/headers/Church.avif" },
+  { name: "Church", path: "/headers/Church.avif", mobileOffset: true },
   { name: "Dungeon", path: "/headers/Dungeon.avif" },
   { name: "Forest", path: "/headers/Forest.avif" },
   { name: "Gala", path: "/headers/Gala.avif" },
   { name: "Infinity Pool", path: "/headers/InfinityPoolPenthouse.avif" },
   { name: "Lux Sofa", path: "/headers/LuxSofa.avif" },
-  { name: "Master Bedroom", path: "/headers/MasterBedroom.avif" },
+  { name: "Master Bedroom", path: "/headers/MasterBedroom.avif", mobileOffset: true },
   { name: "Mine", path: "/headers/Mine.avif" },
   { name: "Neon Bar", path: "/headers/NeonBar.avif" },
   { name: "Nightsky", path: "/headers/Nightsky.avif" },
   { name: "Oasis Party", path: "/headers/OasisParty.avif" },
-  { name: "Prison Cell", path: "/headers/PrisonCell.avif" },
+  { name: "Prison Cell", path: "/headers/PrisonCell.avif", mobileOffset: true },
   { name: "Shrine", path: "/headers/Shrine.avif" },
   { name: "Study", path: "/headers/Study.avif" },
   { name: "Tavern", path: "/headers/Tavern.avif" },
@@ -359,7 +368,7 @@ export default function CreatorPage() {
                         src={h.path}
                         alt={h.name}
                         fill
-                    className="object-cover object-right-top md:object-cover"
+                    className={cn("object-cover object-right-top md:object-cover", MOBILE_OFFSET_PATHS.has(form.creatorHeaderUrl) && "header-mobile-offset")}
                         sizes="120px"
                         draggable={false}
                       />

@@ -65,6 +65,15 @@ const SORT_LABELS: Record<SortOption, string> = {
   "created-oldest": "Oldest",
 };
 
+const MOBILE_OFFSET_PATHS = new Set([
+  "/headers/Abstract.avif",
+  "/headers/Alchemist.avif",
+  "/headers/Beach.avif",
+  "/headers/Church.avif",
+  "/headers/MasterBedroom.avif",
+  "/headers/PrisonCell.avif",
+]);
+
 function getFieldValue(oc: OCWithDetails, key: string): string | null {
   return oc.fields.find((f) => f.field_key === key)?.value ?? null;
 }
@@ -350,7 +359,7 @@ export default function DashboardPage() {
                     src={headerUrl}
                     alt="Creator banner"
                     fill
-                    className="object-cover object-right-top md:object-right-top"
+                    className={cn("object-cover object-right-top md:object-right-top", MOBILE_OFFSET_PATHS.has(headerUrl) && "header-mobile-offset")}
                     priority
                     sizes="100vw"
                     draggable={false}
