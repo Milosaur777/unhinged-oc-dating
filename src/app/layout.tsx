@@ -42,10 +42,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "48x48" },
-      { url: "/favicon.png", type: "image/png", sizes: "512x512" },
+      { url: "/favicon.ico?v=2", sizes: "48x48" },
+      { url: "/favicon.png?v=2", type: "image/png", sizes: "512x512" },
     ],
-    apple: "/apple-icon.png",
+    apple: "/apple-icon.png?v=2",
   },
 };
 
@@ -68,9 +68,9 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="48x48" />
-        <link rel="icon" type="image/png" href="/favicon.png" sizes="512x512" />
-        <link rel="apple-touch-icon" href="/apple-icon.png" />
+        <link rel="icon" href="/favicon.ico?v=2" sizes="48x48" />
+        <link rel="icon" type="image/png" href="/favicon.png?v=2" sizes="512x512" />
+        <link rel="apple-touch-icon" href="/apple-icon.png?v=2" />
       </head>
       <body className="noise-bg min-h-full flex flex-col bg-background text-foreground">
         <AuthProvider>

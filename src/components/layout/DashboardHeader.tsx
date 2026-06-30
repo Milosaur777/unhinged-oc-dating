@@ -34,6 +34,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { getIncomingLikes, getProfile } from "@/lib/supabase-queries";
 import { cn, getPublicImageUrl, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
+import { UpdatesModal } from "@/components/updates/UpdatesModal";
 
 const navLinks = [
   { href: "/", label: "Dashboard", icon: Home },
@@ -113,14 +114,14 @@ export function DashboardHeader() {
                   <Link
                     href={link.href}
                     className={cn(
-                      "relative flex items-center gap-1.5 overflow-hidden rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:text-foreground",
+                      "relative flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:text-foreground",
                       isActive
                         ? "bg-white/10 text-foreground active-glow"
                         : "hover:bg-white/5"
                     )}
                   >
                     {isActive && (
-                      <span className="pointer-events-none absolute inset-0 animate-light-beam rounded-full bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+                      <span className="pointer-events-none absolute inset-0 animate-light-beam bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
                     )}
                     <link.icon className="relative z-10 size-3.5" />
                     <span className="relative z-10">{link.label}</span>
@@ -136,24 +137,19 @@ export function DashboardHeader() {
           </nav>
 
           <div className="ml-auto flex items-center gap-1">
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="relative rounded-full"
-                    aria-label="Notifications"
-                  >
-                    <Bell className="size-4" />
-                    {likesCount > 0 && (
-                      <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(255,45,123,0.8)]" />
-                    )}
-                  </Button>
-                }
-              />
-              <TooltipContent side="bottom">Updates &amp; announcements coming soon</TooltipContent>
-            </Tooltip>
+            <UpdatesModal>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="relative rounded-full"
+                aria-label="Updates & announcements"
+              >
+                <Bell className="size-4" />
+                {likesCount > 0 && (
+                  <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(255,45,123,0.8)]" />
+                )}
+              </Button>
+            </UpdatesModal>
 
             <DropdownMenu>
               <DropdownMenuTrigger
@@ -237,14 +233,14 @@ export function DashboardHeader() {
                   <Link
                     href={link.href}
                     className={cn(
-                      "relative flex items-center justify-center overflow-hidden rounded-full p-2 text-muted-foreground transition-all duration-200 hover:text-foreground",
+                      "relative flex items-center justify-center rounded-full p-2 text-muted-foreground transition-all duration-200 hover:text-foreground",
                       isActive
                         ? "bg-white/10 text-foreground active-glow"
                         : "hover:bg-white/5"
                     )}
                   >
                     {isActive && (
-                      <span className="pointer-events-none absolute inset-0 animate-light-beam rounded-full bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+                      <span className="pointer-events-none absolute inset-0 animate-light-beam bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
                     )}
                     <link.icon className="relative z-10 size-4" />
                   </Link>
@@ -282,26 +278,23 @@ export function DashboardHeader() {
                     </Link>
                   }
                 />
-                <DropdownMenuItem className="cursor-default">
-                  <Bell className="mr-2 size-4" />
-                  Notifications
-                  {likesCount > 0 && (
-                    <span className="ml-auto flex min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
-                      {likesCount > 99 ? "99+" : likesCount}
-                    </span>
-                  )}
-                </DropdownMenuItem>
+                <UpdatesModal>
+                  <button className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-muted-foreground hover:bg-white/5">
+                    <Bell className="mr-2 size-4" />
+                    Notifications
+                    {likesCount > 0 && (
+                      <span className="ml-auto flex min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
+                        {likesCount > 99 ? "99+" : likesCount}
+                      </span>
+                    )}
+                  </button>
+                </UpdatesModal>
                 <DropdownMenuItem
                   render={
-                    <a
-                      href="https://ko-fi.com/unhinged"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="cursor-pointer"
-                    >
+                    <Link href="/support" className="cursor-pointer">
                       <ExternalLink className="mr-2 size-4" />
                       Support Unhinged
-                    </a>
+                    </Link>
                   }
                 />
                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">

@@ -70,7 +70,7 @@ export function LoginCard() {
                 src="/icon.avif"
                 alt="Unhinged"
                 fill
-                className="object-contain p-1"
+                className="object-cover"
                 sizes="80px"
               />
             </div>
