@@ -192,7 +192,7 @@
 }
 
 .animate-light-beam {
-  animation: light-beam 3s ease-in-out 2s infinite;
+  animation: light-beam 3s ease-in-out 2s infinite backwards;
 }
 
 .active-glow {

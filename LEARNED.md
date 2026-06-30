@@ -68,6 +68,35 @@ And on `<Image>`: `draggable={false}`.
 **Problem:** No OCs shows a sad "No OCs found" instead of encouraging creation.
 **Fix:** Replace the empty state with the same `CreateOCCard`/`CreateOCRow` component used when OCs exist. Keep the grid layout consistent.
 
+### 11. Light Beam Animation Clipping to Pill Shape
+**Problem:** Gradient beam extends beyond the button's rounded pill shape.
+**Root cause:** The beam `<span>` has `absolute inset-0` and spans the full parent. Putting `overflow-hidden` on the outer wrapper `<span>` doesn't clip to the pill — it clips to the wrapper's rectangle.
+**Fix:** Put `overflow-hidden` directly on the `<Link>` element that has `rounded-full`. The Link's border-radius clips its children (including the beam) to the pill shape. The beam span itself must NOT have `rounded-full`.
+```tsx
+// ✅ Correct structure
+<span className="relative">
+  <Link className="relative overflow-hidden rounded-full ...">
+    <span className="pointer-events-none absolute inset-0 animate-light-beam bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+    <Icon />
+    <span>Label</span>
+  </Link>
+</span>
+
+// ❌ Wrong — overflow-hidden on outer span doesn't clip to pill
+<span className="relative overflow-hidden">
+  <Link className="relative rounded-full ...">
+```
+**Animation settings (globals.css):**
+```css
+.animate-light-beam {
+  animation: light-beam 3s ease-in-out 2s infinite;
+}
+```
+- **Duration:** 3s (fast enough to feel alive, slow enough to not annoy)
+- **Delay:** 2s (pause before first sweep)
+- **Easing:** ease-in-out (smooth acceleration)
+- **No `rounded-full` on beam span** — only the parent Link clips it
+
 ---
 
 ## Key Architecture Decisions
