@@ -77,7 +77,7 @@ const typeConfig = {
 };
 
 interface UpdatesModalProps {
-  children: React.ReactNode;
+  children: React.ReactElement;
 }
 
 export function UpdatesModal({ children }: UpdatesModalProps) {
