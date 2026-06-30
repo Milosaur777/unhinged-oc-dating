@@ -377,10 +377,10 @@ export default function DashboardPage() {
               {/* Stats */}
               <div className="relative mt-4 w-full max-w-2xl sm:mt-0">
                 <div className="absolute -inset-4 rounded-3xl bg-primary/10 blur-3xl" aria-hidden="true" />
-                <div className="relative flex flex-wrap justify-start gap-2 sm:grid sm:grid-cols-4 sm:gap-3">
+                <div className="relative flex flex-wrap justify-start gap-2 sm:flex sm:justify-start sm:gap-3">
                   <StatCard
                     icon={Users}
-                    label="Chars"
+                    label="Characters"
                     value={isGuest ? guestMapped.length : ocs.length}
                   />
                   <StatCard icon={Heart} label="Likes" value={isGuest ? 0 : stats.totalLikes} variant="pink" />
