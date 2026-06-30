@@ -375,7 +375,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Stats */}
-              <div className="relative w-full max-w-2xl">
+              <div className="relative mt-4 w-full max-w-2xl sm:mt-0">
                 <div className="absolute -inset-4 rounded-3xl bg-primary/10 blur-3xl" aria-hidden="true" />
                 <div className="relative grid grid-cols-4 gap-2 sm:gap-3">
                   <StatCard
