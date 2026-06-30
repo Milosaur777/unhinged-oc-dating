@@ -110,11 +110,11 @@ export function DashboardHeader() {
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
-                <span key={link.href} className="relative overflow-hidden">
+                <span key={link.href} className="relative">
                   <Link
                     href={link.href}
                     className={cn(
-                      "relative flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:text-foreground",
+                      "relative flex items-center gap-1.5 overflow-hidden rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:text-foreground",
                       isActive
                         ? "bg-white/10 text-foreground active-glow"
                         : "hover:bg-white/5"
@@ -226,11 +226,11 @@ export function DashboardHeader() {
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
-                <span key={link.href} className="relative overflow-hidden">
+                <span key={link.href} className="relative">
                   <Link
                     href={link.href}
                     className={cn(
-                      "relative flex items-center justify-center rounded-full p-2 text-muted-foreground transition-all duration-200 hover:text-foreground",
+                      "relative flex items-center justify-center overflow-hidden rounded-full p-2 text-muted-foreground transition-all duration-200 hover:text-foreground",
                       isActive
                         ? "bg-white/10 text-foreground active-glow"
                         : "hover:bg-white/5"
