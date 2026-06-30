@@ -171,9 +171,9 @@ export function OCCard({
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-3">
-          <h3 className="truncate text-lg font-bold text-white">{oc.name}</h3>
-          <div className="flex flex-wrap items-center gap-1.5 text-xs text-white/80">
+        <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3">
+          <h3 className="truncate text-base font-bold text-white sm:text-lg">{oc.name}</h3>
+          <div className="flex flex-wrap items-center gap-1 text-[10px] text-white/80 sm:gap-1.5 sm:text-xs">
             {species && <span className="truncate">{species}</span>}
             {species && gender && <span className="text-white/40">&bull;</span>}
             {gender && <span className="truncate">{gender}</span>}
@@ -182,7 +182,7 @@ export function OCCard({
           </div>
         </div>
       </Link>
-      <div className="flex flex-col gap-2 p-3">
+      <div className="flex flex-col gap-1.5 p-2 sm:gap-2 sm:p-3">
         <TagPillList tags={oc.tags} />
         {showActions && (
           <div className="mt-auto flex items-center gap-2">

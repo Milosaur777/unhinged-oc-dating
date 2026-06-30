@@ -380,17 +380,17 @@ export default function DashboardPage() {
                 <div className="relative grid grid-cols-4 gap-2 sm:gap-3">
                   <StatCard
                     icon={Users}
-                    label="Total OCs"
+                    label="Chars"
                     value={isGuest ? guestMapped.length : ocs.length}
                   />
-                  <StatCard icon={Heart} label="Total Likes" value={isGuest ? 0 : stats.totalLikes} variant="pink" />
+                  <StatCard icon={Heart} label="Likes" value={isGuest ? 0 : stats.totalLikes} variant="pink" />
                   <StatCard
                     icon={MessageCircle}
-                    label="Match"
+                    label="Matches"
                     value={isGuest ? 0 : stats.matches}
                     variant="blue"
                   />
-                  <StatCard icon={Eye} label="Profile Views" value={0} variant="purple" />
+                  <StatCard icon={Eye} label="Views" value={0} variant="purple" />
                 </div>
               </div>
             </div>
@@ -511,7 +511,7 @@ export default function DashboardPage() {
                         onClick={saveDashboardScroll}
                         className={cn(
                           "transition-all",
-                          view === "grid" ? "h-[420px]" : "h-fit",
+                          view === "grid" ? "h-[294px] sm:h-[420px]" : "h-fit",
                           draggingId === oc.id && "opacity-50"
                         )}
                       >
@@ -632,20 +632,18 @@ function StatCard({
   return (
     <div
       className={cn(
-        "group flex items-center gap-2 rounded-xl border border-white/10 p-2.5 backdrop-blur-xl ring-1 ring-white/5 transition-all duration-300 ease-out hover:scale-[1.02] sm:gap-3 sm:p-4",
+        "group flex flex-col items-center gap-1 rounded-xl border border-white/10 px-2 py-2.5 backdrop-blur-xl ring-1 ring-white/5 transition-all duration-300 ease-out hover:scale-[1.02] sm:gap-1.5 sm:px-3 sm:py-3",
         style.cardBg,
         style.glow,
         style.hoverGlow,
         style.hoverBorder
       )}
     >
-      <div className={cn("flex size-7 shrink-0 items-center justify-center rounded-lg sm:size-10", style.bg)}>
-        <Icon className={cn("size-3.5 sm:size-5", style.iconColor)} />
+      <div className={cn("flex size-7 shrink-0 items-center justify-center rounded-lg sm:size-8", style.bg)}>
+        <Icon className={cn("size-3.5 sm:size-4", style.iconColor)} />
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-base font-bold leading-none sm:text-2xl">{value}</p>
-        <p className="mt-0.5 whitespace-nowrap text-[10px] leading-tight text-muted-foreground sm:mt-1 sm:text-xs">{label}</p>
-      </div>
+      <p className="text-base font-bold leading-none sm:text-xl">{value}</p>
+      <p className="text-[10px] leading-tight text-muted-foreground sm:text-xs">{label}</p>
     </div>
   );
 }
@@ -654,7 +652,7 @@ function CreateOCCard() {
   return (
     <Link
       href="/create"
-      className="group flex h-[420px] flex-col items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed border-primary/30 bg-white/[0.02] backdrop-blur-xl transition-all duration-300 ease-out hover:border-primary/40 hover:bg-primary/5 hover:shadow-[0_0_32px_rgba(255,45,123,0.2)]"
+      className="group flex h-[294px] flex-col items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed border-primary/30 bg-white/[0.02] backdrop-blur-xl transition-all duration-300 ease-out hover:border-primary/40 hover:bg-primary/5 hover:shadow-[0_0_32px_rgba(255,45,123,0.2)] sm:h-[420px]"
     >
       <div className="animate-pulse-glow flex size-14 items-center justify-center rounded-full border border-primary/30 bg-white/5 transition-all duration-300 group-hover:scale-110 group-hover:border-primary/30 group-hover:bg-primary/10">
         <Plus className="size-7 text-primary transition-colors group-hover:text-primary" />
