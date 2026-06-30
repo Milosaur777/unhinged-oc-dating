@@ -359,7 +359,7 @@ export default function CreatorPage() {
                         src={h.path}
                         alt={h.name}
                         fill
-                        className="object-cover"
+                    className="object-contain object-right-top md:object-cover"
                         sizes="120px"
                         draggable={false}
                       />
