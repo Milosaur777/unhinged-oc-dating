@@ -432,6 +432,9 @@ function CreateOCForm() {
   function randomizeField(fieldKey: string) {
     const random = generateRandomOC();
     switch (fieldKey) {
+      case "name":
+        update("name", random.name);
+        break;
       case "species":
         update("species", random.species);
         break;
@@ -555,9 +558,10 @@ function CreateOCForm() {
     fieldKey: string;
     showRandomize?: boolean;
     showSkip?: boolean;
+    showVisibility?: boolean;
   }
 
-  function renderFieldHeader({ label, fieldKey, showRandomize = true, showSkip = true }: FieldHeaderProps): ReactNode {
+  function renderFieldHeader({ label, fieldKey, showRandomize = true, showSkip = true, showVisibility = true }: FieldHeaderProps): ReactNode {
     const skipped = form.skippedFields[fieldKey] ?? false;
     const visible = form.fieldVisibility[fieldKey] ?? true;
     return (
@@ -586,19 +590,21 @@ function CreateOCForm() {
               Skip
             </label>
           )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => updateVisibility(fieldKey, !visible)}
-            aria-label={visible ? `Hide ${label}` : `Show ${label}`}
-          >
-            {visible ? (
-              <Eye className="size-3.5 text-muted-foreground transition-colors hover:text-primary" />
-            ) : (
-              <EyeOff className="size-3.5 text-primary" />
-            )}
-          </Button>
+          {showVisibility && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => updateVisibility(fieldKey, !visible)}
+              aria-label={visible ? `Hide ${label}` : `Show ${label}`}
+            >
+              {visible ? (
+                <Eye className="size-3.5 text-muted-foreground transition-colors hover:text-primary" />
+              ) : (
+                <EyeOff className="size-3.5 text-primary" />
+              )}
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -730,11 +736,12 @@ function CreateOCForm() {
     <>
       <DashboardHeader />
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 pt-20 md:pt-24">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">{editId ? "Edit OC" : "Create OC"}</h1>
-          <Button variant="outline" onClick={handleRandomize} className="gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-xl font-bold sm:text-2xl">{editId ? "Edit OC" : "Create OC"}</h1>
+          <Button variant="outline" onClick={handleRandomize} className="gap-1.5">
             <Dices className="size-4" />
-            Random
+            <span className="hidden sm:inline">Random</span>
+            <span className="sm:hidden">Roll</span>
           </Button>
         </div>
 
@@ -765,13 +772,13 @@ function CreateOCForm() {
           })}
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6 ring-1 ring-foreground/10">
+        <div className="rounded-2xl border border-border bg-card p-4 ring-1 ring-foreground/10 sm:p-6">
           {step === 0 && (
             <div className="flex flex-col gap-4">
               <h2 className="text-lg font-semibold">Basic Info</h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  {renderFieldHeader({ label: "Name", fieldKey: "name", showRandomize: false, showSkip: false })}
+                  {renderFieldHeader({ label: "Name", fieldKey: "name", showRandomize: true, showSkip: false, showVisibility: false })}
                   <Input
                     id="name"
                     value={form.name}
@@ -1148,7 +1155,7 @@ function CreateOCForm() {
           )}
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button
             variant="outline"
             onClick={() => setStep((s) => Math.max(0, s - 1))}

@@ -632,7 +632,7 @@ function StatCard({
   return (
     <div
       className={cn(
-        "group flex items-center gap-2 rounded-xl border border-white/10 p-2 backdrop-blur-xl ring-1 ring-white/5 transition-all duration-300 ease-out hover:scale-[1.02] sm:gap-3 sm:p-4",
+        "group flex items-center gap-2 rounded-xl border border-white/10 p-2.5 backdrop-blur-xl ring-1 ring-white/5 transition-all duration-300 ease-out hover:scale-[1.02] sm:gap-3 sm:p-4",
         style.cardBg,
         style.glow,
         style.hoverGlow,
@@ -644,7 +644,7 @@ function StatCard({
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-base font-bold leading-none sm:text-2xl">{value}</p>
-        <p className="mt-0.5 truncate text-[10px] leading-tight text-muted-foreground sm:mt-1 sm:text-xs">{label}</p>
+        <p className="mt-0.5 whitespace-nowrap text-[10px] leading-tight text-muted-foreground sm:mt-1 sm:text-xs">{label}</p>
       </div>
     </div>
   );
