@@ -632,20 +632,20 @@ function StatCard({
   return (
     <div
       className={cn(
-        "group flex flex-col gap-0.5 rounded-xl border border-white/10 px-2.5 py-2 backdrop-blur-xl ring-1 ring-white/5 transition-all duration-300 ease-out hover:scale-[1.02] sm:flex-row sm:items-center sm:gap-2 sm:px-3 sm:py-3",
+        "group flex flex-col gap-0.5 rounded-xl border border-white/10 px-2 py-1.5 backdrop-blur-xl ring-1 ring-white/5 transition-all duration-300 ease-out hover:scale-[1.02] sm:flex-row sm:items-center sm:gap-2 sm:px-3 sm:py-3",
         style.cardBg,
         style.glow,
         style.hoverGlow,
         style.hoverBorder
       )}
     >
-      <div className="flex items-center gap-1.5">
-        <div className={cn("flex size-6 shrink-0 items-center justify-center rounded-md sm:size-8", style.bg)}>
-          <Icon className={cn("size-3 sm:size-4", style.iconColor)} />
+      <div className="flex items-center gap-1">
+        <div className={cn("flex size-5 shrink-0 items-center justify-center rounded-md sm:size-8", style.bg)}>
+          <Icon className={cn("size-2.5 sm:size-4", style.iconColor)} />
         </div>
-        <p className="text-base font-bold leading-none sm:text-xl">{value}</p>
+        <p className="text-sm font-bold leading-none sm:text-xl">{value}</p>
       </div>
-      <p className="text-[10px] leading-tight text-muted-foreground sm:text-xs">{label}</p>
+      <p className="text-[9px] leading-tight text-muted-foreground sm:text-xs">{label}</p>
     </div>
   );
 }
