@@ -66,23 +66,23 @@ const SORT_LABELS: Record<SortOption, string> = {
 };
 
 const MOBILE_OFFSETS: Record<string, number> = {
-  "/headers/Abstract.avif": 70,
+  "/headers/Abstract.avif": 55,
   "/headers/Alchemist.avif": 70,
   "/headers/Beach.avif": 70,
   "/headers/Bedroom.avif": 95,
-  "/headers/Cantina.avif": 90,
-  "/headers/Church.avif": 68,
-  "/headers/Dungeon.avif": 95,
+  "/headers/Cantina.avif": 75,
+  "/headers/Church.avif": 65,
+  "/headers/Dungeon.avif": 85,
   "/headers/Forest.avif": 90,
-  "/headers/Gala.avif": 55,
+  "/headers/Gala.avif": 30,
   "/headers/MasterBedroom.avif": 60,
   "/headers/Mine.avif": 95,
-  "/headers/NeonBar.avif": 65,
-  "/headers/OasisParty.avif": 70,
-  "/headers/PrisonCell.avif": 65,
-  "/headers/Shrine.avif": 75,
-  "/headers/Study.avif": 75,
-  "/headers/Tavern.avif": 95,
+  "/headers/NeonBar.avif": 45,
+  "/headers/OasisParty.avif": 65,
+  "/headers/PrisonCell.avif": 60,
+  "/headers/Shrine.avif": 60,
+  "/headers/Study.avif": 70,
+  "/headers/Tavern.avif": 90,
 };
 
 function getFieldValue(oc: OCWithDetails, key: string): string | null {
