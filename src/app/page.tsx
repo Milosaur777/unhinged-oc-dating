@@ -511,7 +511,7 @@ export default function DashboardPage() {
                         onClick={saveDashboardScroll}
                         className={cn(
                           "transition-all",
-                          view === "grid" ? "h-[294px] sm:h-[420px]" : "h-fit",
+                          view === "grid" ? "h-[280px] sm:h-[420px]" : "h-fit",
                           draggingId === oc.id && "opacity-50"
                         )}
                       >
@@ -632,7 +632,7 @@ function StatCard({
   return (
     <div
       className={cn(
-        "group flex flex-col items-center gap-1 rounded-xl border border-white/10 px-2 py-2.5 backdrop-blur-xl ring-1 ring-white/5 transition-all duration-300 ease-out hover:scale-[1.02] sm:gap-1.5 sm:px-3 sm:py-3",
+        "group flex flex-col items-center gap-1 rounded-xl border border-white/10 px-2 py-2.5 backdrop-blur-xl ring-1 ring-white/5 transition-all duration-300 ease-out hover:scale-[1.02] sm:flex-row sm:items-center sm:gap-2 sm:px-3 sm:py-3",
         style.cardBg,
         style.glow,
         style.hoverGlow,
@@ -652,7 +652,7 @@ function CreateOCCard() {
   return (
     <Link
       href="/create"
-      className="group flex h-[294px] flex-col items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed border-primary/30 bg-white/[0.02] backdrop-blur-xl transition-all duration-300 ease-out hover:border-primary/40 hover:bg-primary/5 hover:shadow-[0_0_32px_rgba(255,45,123,0.2)] sm:h-[420px]"
+      className="group flex h-[280px] flex-col items-center justify-center gap-3 overflow-hidden rounded-xl border border-dashed border-primary/30 bg-white/[0.02] backdrop-blur-xl transition-all duration-300 ease-out hover:border-primary/40 hover:bg-primary/5 hover:shadow-[0_0_32px_rgba(255,45,123,0.2)] sm:h-[420px]"
     >
       <div className="animate-pulse-glow flex size-14 items-center justify-center rounded-full border border-primary/30 bg-white/5 transition-all duration-300 group-hover:scale-110 group-hover:border-primary/30 group-hover:bg-primary/10">
         <Plus className="size-7 text-primary transition-colors group-hover:text-primary" />
