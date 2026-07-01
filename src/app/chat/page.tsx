@@ -122,7 +122,6 @@ export default function ChatListPage() {
         <DashboardHeader />
         <main className="flex flex-1 items-center justify-center pt-20 md:pt-24">Loading...</main>
       </>
-    </>
     );
   }
 
