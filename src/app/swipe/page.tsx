@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { X, Heart, Flame, Info, Search, Frown, RotateCcw } from "lucide-react";
+import { motion, useMotionValue, useTransform, PanInfo, animate } from "framer-motion";
+import { X, Heart, Flame, Info, RotateCcw, User } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import { TagPillList } from "@/components/ui/TagPill";
-import { OCCard } from "@/components/oc/OCCard";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
   getSwipeCandidates,
@@ -20,13 +18,12 @@ import {
   OCWithDetails,
   getUserOCs,
   resetSwipes,
-  getPublicOCs,
 } from "@/lib/supabase-queries";
 import { getPublicImageUrl, getInitials, cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const SWIPE_THRESHOLD = 100;
-const ROTATION_LIMIT = 20;
+const VELOCITY_THRESHOLD = 500;
 
 function getField(oc: OCWithDetails, key: string): string | null {
   return oc.fields.find((f) => f.field_key === key && f.visible !== false)?.value ?? null;
@@ -35,10 +32,11 @@ function getField(oc: OCWithDetails, key: string): string | null {
 export default function SwipePage() {
   const router = useRouter();
   const { user, isGuest, loading } = useAuth();
+  const [myOCs, setMyOCs] = useState<OCWithDetails[]>([]);
+  const [selectedOcId, setSelectedOcId] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<OCWithDetails[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dataLoading, setDataLoading] = useState(true);
-  const [myOcIds, setMyOcIds] = useState<string[]>([]);
   const [resetting, setResetting] = useState(false);
   const suppressTapRef = useRef(false);
 
@@ -53,16 +51,12 @@ export default function SwipePage() {
     async function load() {
       try {
         const ocs = await getUserOCs(user!.id);
-        const ids = ocs.map((o) => o.id);
-        setMyOcIds(ids);
-        if (ids.length === 0) {
-          setDataLoading(false);
-          return;
+        setMyOCs(ocs);
+        if (ocs.length === 1) {
+          setSelectedOcId(ocs[0].id);
         }
-        const candidates = await getSwipeCandidates(ids, user!.id);
-        setCandidates(candidates);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to load cards");
+        toast.error(err instanceof Error ? err.message : "Failed to load your OCs");
       } finally {
         setDataLoading(false);
       }
@@ -70,21 +64,34 @@ export default function SwipePage() {
     load();
   }, [user, isGuest, loading, router]);
 
+  useEffect(() => {
+    if (!selectedOcId || !user) return;
+    let cancelled = false;
+    async function load() {
+      try {
+        const fresh = await getSwipeCandidates([selectedOcId!], user!.id);
+        if (!cancelled) {
+          setCandidates(fresh);
+          setCurrentIndex(0);
+        }
+      } catch (err) {
+        if (!cancelled) toast.error(err instanceof Error ? err.message : "Failed to load candidates");
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [selectedOcId, user]);
+
   const current = candidates[currentIndex];
 
-  async function refreshCandidates() {
-    if (myOcIds.length === 0 || !user) return;
-    const fresh = await getSwipeCandidates(myOcIds, user.id);
-    setCandidates(fresh);
-    setCurrentIndex(0);
-  }
-
   async function handleResetSwipes() {
-    if (!user || resetting) return;
+    if (!user || resetting || !selectedOcId) return;
     setResetting(true);
     try {
       await resetSwipes(user.id);
-      await refreshCandidates();
+      const fresh = await getSwipeCandidates([selectedOcId], user.id);
+      setCandidates(fresh);
+      setCurrentIndex(0);
       toast.success("Swipes reset");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to reset swipes");
@@ -94,15 +101,14 @@ export default function SwipePage() {
   }
 
   function handleResult(action: "like" | "pass") {
-    if (!current || myOcIds.length === 0) return;
+    if (!current || !selectedOcId) return;
 
-    const myOcId = myOcIds[0];
-    recordSwipe(myOcId, current.id, action).then(async () => {
+    recordSwipe(selectedOcId, current.id, action).then(async () => {
       if (action === "like") {
-        const mutual = await checkMutualLike(myOcId, current.id);
+        const mutual = await checkMutualLike(selectedOcId, current.id);
         if (mutual) {
           await createChatSession(
-            myOcId,
+            selectedOcId,
             current.id,
             current.user_id,
             null,
@@ -113,10 +119,6 @@ export default function SwipePage() {
       }
       setCurrentIndex((i) => i + 1);
     });
-  }
-
-  function scrollToMatches() {
-    document.getElementById("matches")?.scrollIntoView({ behavior: "smooth" });
   }
 
   if (loading) {
@@ -155,6 +157,79 @@ export default function SwipePage() {
     );
   }
 
+  if (myOCs.length === 0) {
+    return (
+      <>
+        <DashboardHeader />
+        <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-4 px-4 pt-20 text-center md:pt-24">
+          <User className="size-12 text-muted-foreground" />
+          <h1 className="text-2xl font-bold">Create an OC first</h1>
+          <p className="text-muted-foreground">
+            You need at least one character to start swiping.
+          </p>
+          <Link href="/create">
+            <Button>Create Character</Button>
+          </Link>
+        </main>
+      </>
+    );
+  }
+
+  if (!selectedOcId) {
+    return (
+      <>
+        <DashboardHeader />
+        <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-6 pt-20 md:pt-24">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold">Choose your character</h1>
+            <p className="text-sm text-muted-foreground">Pick who you want to swipe as</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            {myOCs.map((oc) => {
+              const imageUrl = getPublicImageUrl(oc.image_url);
+              return (
+                <button
+                  key={oc.id}
+                  onClick={() => setSelectedOcId(oc.id)}
+                  className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] transition-all duration-200 hover:border-primary/50 hover:shadow-[0_0_24px_rgba(255,45,123,0.2)] cursor-pointer"
+                >
+                  <div className="relative aspect-[3/4] w-full">
+                    {imageUrl ? (
+                      <Image
+                        src={imageUrl}
+                        alt={oc.name}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        sizes="(max-width: 640px) 50vw, 33vw"
+                      />
+                    ) : (
+                      <div className="flex size-full items-center justify-center bg-zinc-900 text-3xl font-bold text-muted-foreground">
+                        {getInitials(oc.name)}
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <h3 className="text-sm font-bold text-white">{oc.name}</h3>
+                      <div className="flex flex-wrap gap-1 text-[10px] text-white/70">
+                        {getField(oc, "species") && <span>{getField(oc, "species")}</span>}
+                        {getField(oc, "gender") && (
+                          <>
+                            <span className="text-white/30">&bull;</span>
+                            <span>{getField(oc, "gender")}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <DashboardHeader />
@@ -163,6 +238,14 @@ export default function SwipePage() {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Swipe</h1>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedOcId(null)}
+                className="gap-1.5"
+              >
+                Switch OC
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -184,23 +267,18 @@ export default function SwipePage() {
               <Flame className="size-12 text-muted-foreground" />
               <h2 className="text-xl font-semibold">No more cards</h2>
               <p className="text-sm text-muted-foreground">
-                Check back later or browse all matches.
+                Check back later for new characters.
               </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleResetSwipes}
-                  disabled={resetting}
-                  className="gap-1.5"
-                >
-                  <RotateCcw className="size-3.5" />
-                  Reset Swipes
-                </Button>
-                <Button variant="outline" onClick={scrollToMatches}>
-                  Browse Matches
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResetSwipes}
+                disabled={resetting}
+                className="gap-1.5"
+              >
+                <RotateCcw className="size-3.5" />
+                Reset Swipes
+              </Button>
             </div>
           ) : (
             <>
@@ -231,96 +309,11 @@ export default function SwipePage() {
                   <Heart className="size-6" />
                 </Button>
               </div>
-              <div className="flex justify-center pb-6">
-                <Button variant="ghost" size="sm" onClick={scrollToMatches}>
-                  Browse matches below
-                </Button>
-              </div>
             </>
           )}
         </div>
-
-        <section id="matches" className="mt-6 border-t border-white/5 pt-8">
-          <MatchesSection userId={user.id} />
-        </section>
       </main>
     </>
-  );
-}
-
-function MatchesSection({ userId }: { userId: string }) {
-  const [ocs, setOcs] = useState<OCWithDetails[]>([]);
-  const [dataLoading, setDataLoading] = useState(true);
-  const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const data = await getPublicOCs(userId);
-        if (!cancelled) setOcs(data);
-      } catch (err) {
-        if (!cancelled) {
-          toast.error(err instanceof Error ? err.message : "Failed to load matches");
-        }
-      } finally {
-        if (!cancelled) setDataLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return ocs;
-    return ocs.filter((oc) => {
-      const matchesName = oc.name.toLowerCase().includes(q);
-      const matchesId = oc.id.toLowerCase().includes(q);
-      const matchesTag = oc.tags?.some((t) => t.toLowerCase().includes(q));
-      return matchesName || matchesId || matchesTag;
-    });
-  }, [ocs, query]);
-
-  return (
-    <div className="flex flex-col gap-6 px-2 md:px-4">
-        <div className="flex flex-col gap-4">
-          <h2 className="text-2xl font-bold">Your Matches</h2>
-          <div className="relative max-w-md">
-            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by Name / ID / Tag..."
-              className="border-white/10 bg-white/[0.03] backdrop-blur-xl pl-9"
-            />
-          </div>
-        </div>
-
-      {dataLoading ? (
-        <div className="text-sm text-muted-foreground">Loading matches...</div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl py-16">
-          <Frown className="size-10 text-muted-foreground" />
-          <p className="text-muted-foreground">No matches found.</p>
-          {query ? (
-            <Button variant="outline" onClick={() => setQuery("")}>
-              Clear filters
-            </Button>
-          ) : null}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {filtered.map((oc) => (
-            <Link key={oc.id} href={`/oc/${oc.id}`}>
-              <OCCard oc={oc} showActions={false} />
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -333,17 +326,36 @@ interface SwipeCardProps {
 function SwipeCard({ oc, onResult, suppressTapRef }: SwipeCardProps) {
   const router = useRouter();
   const x = useMotionValue(0);
-  const rotate = useTransform(x, [-300, 300], [-ROTATION_LIMIT, ROTATION_LIMIT]);
+  const rotate = useTransform(x, [-400, 400], [-25, 25]);
   const likeOpacity = useTransform(x, [50, 150], [0, 1]);
   const nopeOpacity = useTransform(x, [-150, -50], [1, 0]);
+  const cardRef = useRef<HTMLDivElement>(null);
   const imageUrl = getPublicImageUrl(oc.image_url);
 
   function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
-    if (Math.abs(info.offset.x) > SWIPE_THRESHOLD || Math.abs(info.velocity.x) > 500) {
+    const shouldFlyOut =
+      Math.abs(info.offset.x) > SWIPE_THRESHOLD || Math.abs(info.velocity.x) > VELOCITY_THRESHOLD;
+
+    if (shouldFlyOut) {
       suppressTapRef.current = true;
-      const action = info.offset.x > 0 ? "like" : "pass";
-      onResult(action);
+      const direction = info.offset.x > 0 ? 1 : -1;
+      const flyX = direction * window.innerWidth * 1.5;
+      const flyRotate = direction * 45;
+
+      animate(x, flyX, {
+        type: "tween",
+        duration: 0.4,
+        ease: [0.32, 0.72, 0, 1],
+      }).then(() => {
+        const action = direction > 0 ? "like" : "pass";
+        onResult(action);
+      });
+
+      if (cardRef.current) {
+        animate(cardRef.current, { rotate: flyRotate }, { type: "tween", duration: 0.4, ease: [0.32, 0.72, 0, 1] });
+      }
     } else {
+      animate(x, 0, { type: "spring", stiffness: 500, damping: 30 });
       setTimeout(() => {
         suppressTapRef.current = false;
       }, 100);
@@ -364,10 +376,12 @@ function SwipeCard({ oc, onResult, suppressTapRef }: SwipeCardProps) {
 
   return (
     <motion.div
+      ref={cardRef}
       style={{ x, rotate, touchAction: "none" }}
-      drag
-      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-      dragElastic={0.8}
+      drag="x"
+      dragDirectionLock
+      dragElastic={0.7}
+      dragMomentum={false}
       onDrag={handleDrag}
       onDragEnd={handleDragEnd}
       onClick={handleClick}

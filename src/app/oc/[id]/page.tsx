@@ -6,12 +6,12 @@ import { OCWithDetails, OCField, OCOpenFeed } from "@/lib/supabase-queries";
 
 interface PageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ card?: string; oc?: string }>;
+  searchParams: Promise<{ card?: string; oc?: string; from?: string }>;
 }
 
 export default async function OCPage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  const { card, oc: fromOc } = await searchParams;
+  const { card, oc: fromOc, from } = await searchParams;
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -37,7 +37,7 @@ export default async function OCPage({ params, searchParams }: PageProps) {
 
   return (
     <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
-      <OCProfile oc={oc} isOwner={isOwner} backToSwipe={card} fromOc={fromOc} />
+      <OCProfile oc={oc} isOwner={isOwner} backToSwipe={card} fromOc={fromOc} fromPage={from} />
     </Suspense>
   );
 }

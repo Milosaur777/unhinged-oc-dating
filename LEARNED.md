@@ -89,13 +89,27 @@ And on `<Image>`: `draggable={false}`.
 **Animation settings (globals.css):**
 ```css
 .animate-light-beam {
-  animation: light-beam 3s ease-in-out 2s infinite;
+  animation: light-beam 3s ease-in-out 2s infinite backwards;
 }
 ```
 - **Duration:** 3s (fast enough to feel alive, slow enough to not annoy)
 - **Delay:** 2s (pause before first sweep)
 - **Easing:** ease-in-out (smooth acceleration)
+- **Fill-mode:** `backwards` — during the delay, the beam stays at the `0%` keyframe position (`translateX(-100%)`, off-screen left). Without this, the beam sits visible in the center of the button during the delay, which looks broken.
 - **No `rounded-full` on beam span** — only the parent Link clips it
+
+### 12. Animation Fill-Mode for Delayed Animations
+**Problem:** Animated elements appear in their default position during `animation-delay`, then snap to the animation start.
+**Root cause:** Default `animation-fill-mode` is `none`, meaning during the delay the element renders at its CSS-defined position (not the keyframe position).
+**Fix:** Use `animation-fill-mode: backwards` (or include it in the shorthand) to apply the first keyframe's styles during the delay:
+```css
+/* ❌ Beam sits centered during 2s delay */
+animation: light-beam 3s ease-in-out 2s infinite;
+
+/* ✅ Beam stays off-screen during 2s delay */
+animation: light-beam 3s ease-in-out 2s infinite backwards;
+```
+**When to use:** Any looping animation with a delay where the element should not be visible in its default state before the first sweep/cycle.
 
 ---
 

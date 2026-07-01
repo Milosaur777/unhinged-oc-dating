@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Heart, X, Frown, Flame } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -16,7 +17,6 @@ import {
 } from "@/lib/supabase-queries";
 import { getPublicImageUrl, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
-import Image from "next/image";
 
 export default function LikesPage() {
   const router = useRouter();
@@ -27,7 +27,7 @@ export default function LikesPage() {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      router.push("/auth");
+      router.push("/");
       return;
     }
     if (isGuest) return;
@@ -54,9 +54,12 @@ export default function LikesPage() {
   async function handleLikeBack(like: IncomingLike) {
     try {
       await recordSwipe(like.to_oc_id, like.from_oc_id, "like");
-      await createChatSession(like.to_oc_id, like.from_oc_id, like.liker_oc?.user_id || "", null, like.liker_oc?.name || null);
+      const mutual = await (await import("@/lib/supabase-queries")).checkMutualLike(like.to_oc_id, like.from_oc_id);
+      if (mutual) {
+        await createChatSession(like.to_oc_id, like.from_oc_id, like.liker_oc?.user_id || "", null, like.liker_oc?.name || null);
+      }
       setLikes((prev) => prev.filter((l) => l.id !== like.id));
-      toast.success(`Matched with ${like.liker_oc?.name}!`);
+      toast.success(mutual ? `Matched with ${like.liker_oc?.name}!` : `Liked ${like.liker_oc?.name} back!`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to match");
     }
@@ -127,23 +130,31 @@ export default function LikesPage() {
               {likes.map((like) => {
                 const imageUrl = getPublicImageUrl(like.liker_oc?.image_url);
                 return (
-                  <div key={like.id} className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-4 sm:flex-row sm:items-center transition-all duration-300 ease-out hover:border-primary/30 hover:shadow-[0_0_16px_rgba(255,45,123,0.12)]">
+                  <div
+                    key={like.id}
+                    className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-4 sm:flex-row sm:items-center transition-all duration-300 ease-out hover:border-primary/30 hover:shadow-[0_0_16px_rgba(255,45,123,0.12)]"
+                  >
                     <div className="flex items-center gap-3">
-                      <div className="relative size-12 overflow-hidden rounded-full bg-muted">
-                        {imageUrl ? (
-                          <Image
-                            src={imageUrl}
-                            alt={like.liker_oc?.name || ""}
-                            fill
-                            className="object-cover"
-                            sizes="48px"
-                          />
-                        ) : (
-                          <div className="flex size-full items-center justify-center text-xs font-bold">
-                            {getInitials(like.liker_oc?.name || "?")}
-                          </div>
-                        )}
-                      </div>
+                      <Link
+                        href={`/oc/${like.from_oc_id}?from=likes`}
+                        className="shrink-0"
+                      >
+                        <div className="relative size-16 overflow-hidden rounded-full bg-muted transition-all duration-200 hover:ring-2 hover:ring-primary/50 cursor-pointer">
+                          {imageUrl ? (
+                            <Image
+                              src={imageUrl}
+                              alt={like.liker_oc?.name || ""}
+                              fill
+                              className="object-cover"
+                              sizes="64px"
+                            />
+                          ) : (
+                            <div className="flex size-full items-center justify-center text-sm font-bold">
+                              {getInitials(like.liker_oc?.name || "?")}
+                            </div>
+                          )}
+                        </div>
+                      </Link>
                       <div>
                         <p className="font-medium">
                           <span className="text-primary">{like.liker_oc?.name}</span> liked{" "}

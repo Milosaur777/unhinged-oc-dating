@@ -244,7 +244,7 @@ export async function resetSwipes(userId: string) {
   const ids = ocs?.map((o) => o.id) ?? [];
   if (ids.length === 0) return;
 
-  const { error } = await supabase.from("swipe_actions").delete().in("from_oc_id", ids);
+  const { error } = await supabase.from("swipe_actions").delete().in("from_oc_id", ids).eq("action", "pass");
   if (error) throw error;
 }
 

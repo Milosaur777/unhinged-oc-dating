@@ -18,28 +18,35 @@ interface OCProfileProps {
   isOwner: boolean;
   backToSwipe?: string;
   fromOc?: string;
+  fromPage?: string;
 }
 
 function getField(oc: OCWithDetails, key: string): OCField | undefined {
   return oc.fields.find((f) => f.field_key === key && f.visible !== false && f.skipped !== true);
 }
 
-export function OCProfile({ oc, isOwner, backToSwipe, fromOc }: OCProfileProps) {
+export function OCProfile({ oc, isOwner, backToSwipe, fromOc, fromPage }: OCProfileProps) {
   const router = useRouter();
   const imageUrl = getPublicImageUrl(oc.image_url);
 
   function handleBack(e: React.MouseEvent) {
     e.preventDefault();
-    const saved = sessionStorage.getItem("unhinged_dashboard_scroll");
-    if (saved) {
-      const y = parseInt(saved, 10);
-      sessionStorage.removeItem("unhinged_dashboard_scroll");
-      router.push("/", { scroll: false });
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: y, behavior: "auto" });
-      });
+    if (fromPage === "likes") {
+      router.push("/likes");
+    } else if (fromPage === "chat") {
+      router.push("/chat");
     } else {
-      router.push("/", { scroll: false });
+      const saved = sessionStorage.getItem("unhinged_dashboard_scroll");
+      if (saved) {
+        const y = parseInt(saved, 10);
+        sessionStorage.removeItem("unhinged_dashboard_scroll");
+        router.push("/", { scroll: false });
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: y, behavior: "auto" });
+        });
+      } else {
+        router.push("/", { scroll: false });
+      }
     }
   }
 
@@ -62,7 +69,7 @@ export function OCProfile({ oc, isOwner, backToSwipe, fromOc }: OCProfileProps) 
             <ArrowLeft className="size-4" />
             Back
           </Button>
-          {backToSwipe && (
+          {backToSwipe && !fromPage && (
             <Link
               href={`/swipe?card=${backToSwipe}&oc=${fromOc || ""}`}
               className="flex w-fit items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"

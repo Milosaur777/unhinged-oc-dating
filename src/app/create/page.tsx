@@ -130,6 +130,7 @@ interface GalleryItem {
 interface FormState {
   name: string;
   species: string;
+  speciesCustom: string;
   gender: string;
   genderCustom: string;
   sexualOrientation: string;
@@ -239,6 +240,7 @@ function CreateOCForm() {
   const [form, setForm] = useState<FormState>({
     name: "",
     species: SPECIES[0],
+    speciesCustom: "",
     gender: GENDERS[0],
     genderCustom: "",
     sexualOrientation: ORIENTATIONS[0],
@@ -292,9 +294,12 @@ function CreateOCForm() {
       path,
       file: null,
     }));
+    const rawSpecies = oc.fields.find((f) => f.field_key === "species")?.value || SPECIES[0];
+    const isCustomSpecies = !SPECIES.includes(rawSpecies);
     setForm({
       name: oc.name,
-      species: oc.fields.find((f) => f.field_key === "species")?.value || SPECIES[0],
+      species: isCustomSpecies ? "Other" : rawSpecies,
+      speciesCustom: isCustomSpecies ? rawSpecies : "",
       gender: oc.fields.find((f) => f.field_key === "gender")?.value || GENDERS[0],
       genderCustom: "",
       sexualOrientation:
@@ -343,9 +348,12 @@ function CreateOCForm() {
   }
 
   function populateFromGuest(oc: GuestOC) {
+    const rawSpecies = oc.fields.find((f) => f.field_key === "species")?.value || SPECIES[0];
+    const isCustomSpecies = !SPECIES.includes(rawSpecies);
     setForm({
       name: oc.name,
-      species: oc.fields.find((f) => f.field_key === "species")?.value || SPECIES[0],
+      species: isCustomSpecies ? "Other" : rawSpecies,
+      speciesCustom: isCustomSpecies ? rawSpecies : "",
       gender: oc.fields.find((f) => f.field_key === "gender")?.value || GENDERS[0],
       genderCustom: "",
       sexualOrientation:
@@ -405,6 +413,7 @@ function CreateOCForm() {
       ...prev,
       name: random.name,
       species: random.species,
+      speciesCustom: "",
       gender: random.gender,
       genderCustom: "",
       sexualOrientation: random.sexualOrientation,
@@ -437,6 +446,7 @@ function CreateOCForm() {
         break;
       case "species":
         update("species", random.species);
+        update("speciesCustom", "");
         break;
       case "gender":
         update("gender", random.gender);
@@ -636,13 +646,14 @@ function CreateOCForm() {
       }
 
       const genderValue = form.gender === "Other" ? form.genderCustom || "Other" : form.gender;
+      const speciesValue = form.species === "Other" ? form.speciesCustom || "Other" : form.species;
       const sexualValue =
         form.sexualOrientation === "Other" ? form.sexualCustom || "Other" : form.sexualOrientation;
       const romanticValue =
         form.romanticOrientation === "Other" ? form.romanticCustom || "Other" : form.romanticOrientation;
 
       const fields: Omit<TablesInsert<"oc_fields">, "id" | "oc_id">[] = [
-        makeField("species", "Species", form.species, "select"),
+        makeField("species", "Species", speciesValue, "select"),
         makeField("gender", "Gender", genderValue, "select"),
         makeField("sexual_orientation", "Sexual Orientation", sexualValue, "select"),
         makeField("romantic_orientation", "Romantic Orientation", romanticValue, "select"),
@@ -800,6 +811,14 @@ function CreateOCForm() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {form.species === "Other" && (
+                    <Input
+                      value={form.speciesCustom}
+                      onChange={(e) => update("speciesCustom", e.target.value)}
+                      placeholder="Specify species"
+                      className="mt-1"
+                    />
+                  )}
                 </div>
                 <div className="flex flex-col gap-1.5">
                   {renderFieldHeader({ label: "Gender", fieldKey: "gender" })}
