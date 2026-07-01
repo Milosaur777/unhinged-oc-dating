@@ -18,6 +18,7 @@ import {
   OCWithDetails,
   getUserOCs,
   resetSwipes,
+  OC,
 } from "@/lib/supabase-queries";
 import { getPublicImageUrl, getInitials, cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -32,7 +33,7 @@ function getField(oc: OCWithDetails, key: string): string | null {
 export default function SwipePage() {
   const router = useRouter();
   const { user, isGuest, loading } = useAuth();
-  const [myOCs, setMyOCs] = useState<OCWithDetails[]>([]);
+  const [myOCs, setMyOCs] = useState<OC[]>([]);
   const [selectedOcId, setSelectedOcId] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<OCWithDetails[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
