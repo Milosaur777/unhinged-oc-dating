@@ -211,15 +211,6 @@ export default function SwipePage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-3">
                       <h3 className="text-sm font-bold text-white">{oc.name}</h3>
-                      <div className="flex flex-wrap gap-1 text-[10px] text-white/70">
-                        {getField(oc, "species") && <span>{getField(oc, "species")}</span>}
-                        {getField(oc, "gender") && (
-                          <>
-                            <span className="text-white/30">&bull;</span>
-                            <span>{getField(oc, "gender")}</span>
-                          </>
-                        )}
-                      </div>
                     </div>
                   </div>
                 </button>
