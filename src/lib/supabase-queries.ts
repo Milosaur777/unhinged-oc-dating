@@ -316,16 +316,15 @@ export async function getIncomingLikes(myOcIds: string[]): Promise<IncomingLike[
     .in("to_oc_id", myOcIds);
   if (error) throw error;
 
-  const outgoingLikes = new Set<string>();
+  const responded = new Set<string>();
   const { data: outgoingData } = await supabase
     .from("swipe_actions")
-    .select("from_oc_id,to_oc_id")
-    .eq("action", "like")
+    .select("from_oc_id,to_oc_id,action")
     .in("from_oc_id", myOcIds);
-  outgoingData?.forEach((o) => outgoingLikes.add(`${o.from_oc_id}-${o.to_oc_id}`));
+  outgoingData?.forEach((o) => responded.add(`${o.from_oc_id}-${o.to_oc_id}`));
 
   return (data ?? [])
-    .filter((like) => !outgoingLikes.has(`${like.target_oc?.id}-${like.liker_oc?.id}`))
+    .filter((like) => !responded.has(`${like.target_oc?.id}-${like.liker_oc?.id}`))
     .map((like) => ({
       id: like.id,
       from_oc_id: like.from_oc_id,

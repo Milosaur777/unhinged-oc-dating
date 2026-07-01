@@ -35,6 +35,8 @@ export function OCProfile({ oc, isOwner, backToSwipe, fromOc, fromPage }: OCProf
       router.push("/likes");
     } else if (fromPage === "chat") {
       router.push("/chat");
+    } else if (backToSwipe) {
+      router.push("/swipe");
     } else {
       const saved = sessionStorage.getItem("unhinged_dashboard_scroll");
       if (saved) {

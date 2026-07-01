@@ -186,7 +186,7 @@ export default function ChatListPage() {
                   className="group/card relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-xl transition-all duration-300 ease-out hover:border-primary/30 hover:shadow-[0_0_16px_rgba(255,45,123,0.12)]"
                 >
                   <Link href={`/chat/${session.id}`} className="block p-4">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-start gap-3">
                       <Link
                         href={`/oc/${theirOC?.id}?from=chat`}
                         onClick={(e) => e.stopPropagation()}
@@ -211,15 +211,36 @@ export default function ChatListPage() {
                       </Link>
 
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 text-sm">
+                        <div className="flex flex-wrap items-center gap-1.5 text-sm">
                           <span className="font-semibold text-foreground">{theirOC?.name || "?"}</span>
                           <ArrowRight className="size-3 text-muted-foreground" />
                           <span className="font-semibold text-foreground">{myOC?.name || "?"}</span>
-                          <Badge variant="secondary" className="ml-1 shrink-0 border border-primary/20 bg-primary/10 px-1.5 py-0 text-[10px] text-primary">
+                          <Link
+                            href={`/oc/${theirOC?.id}?from=chat`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="cursor-pointer"
+                          >
+                            <div className="relative size-8 overflow-hidden rounded-full bg-muted transition-all duration-200 hover:ring-2 hover:ring-primary/50">
+                              {myImage ? (
+                                <Image
+                                  src={myImage}
+                                  alt={myOC?.name || "My OC"}
+                                  fill
+                                  className="object-cover"
+                                  sizes="32px"
+                                />
+                              ) : (
+                                <div className="flex size-full items-center justify-center text-[8px] font-bold">
+                                  {getInitials(myOC?.name || "?")}
+                                </div>
+                              )}
+                            </div>
+                          </Link>
+                          <Badge variant="secondary" className="shrink-0 border border-primary/20 bg-primary/10 px-1.5 py-0 text-[10px] text-primary">
                             Lv. {session.chat_level ?? 1}
                           </Badge>
                         </div>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           {lastMessage || "No messages yet"}
                         </p>
                         {lastActive && (
@@ -228,28 +249,6 @@ export default function ChatListPage() {
                           </p>
                         )}
                       </div>
-
-                      <Link
-                        href={`/oc/${theirOC?.id}?from=chat`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="shrink-0"
-                      >
-                        <div className="relative size-10 overflow-hidden rounded-full bg-muted transition-all duration-200 hover:ring-2 hover:ring-primary/50">
-                          {myImage ? (
-                            <Image
-                              src={myImage}
-                              alt={myOC?.name || "My OC"}
-                              fill
-                              className="object-cover"
-                              sizes="40px"
-                            />
-                          ) : (
-                            <div className="flex size-full items-center justify-center text-[10px] font-bold">
-                              {getInitials(myOC?.name || "?")}
-                            </div>
-                          )}
-                        </div>
-                      </Link>
 
                       <Button
                         variant="ghost"
