@@ -109,7 +109,7 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name }: ChatWindowProps) {
   const [gifResults, setGifResults] = useState<string[]>([]);
   const [gifLoading, setGifLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const gifSearchTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const gifSearchTimeout = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
     async function load() {
