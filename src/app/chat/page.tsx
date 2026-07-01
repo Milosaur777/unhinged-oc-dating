@@ -177,8 +177,8 @@ export default function ChatListPage() {
               const theirOC = getTheirOC(session);
               const myImage = getPublicImageUrl(myOC?.image_url);
               const theirImage = getPublicImageUrl(theirOC?.image_url);
-              const lastMessage = (session as Record<string, unknown>).last_message as string | undefined;
-              const lastActive = (session as Record<string, unknown>).last_active_at as string | undefined;
+              const lastMessage = (session as unknown as Record<string, unknown>).last_message as string | undefined;
+              const lastActive = (session as unknown as Record<string, unknown>).last_active_at as string | undefined;
 
               return (
                 <div
