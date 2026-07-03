@@ -11,12 +11,37 @@ export type ChatSession = Tables<"chat_sessions">;
 export type ChatMessage = Tables<"chat_messages">;
 export type SwipeAction = Tables<"swipe_actions">;
 
-export interface OCWithDetails extends OC {
+export interface OCWithDetails {
+  id: string;
+  name: string;
+  user_id: string;
+  image_url: string | null;
+  is_swipable: boolean;
+  is_hidden: boolean | null;
+  is_premade: boolean | null;
+  brand: number | null;
+  tags: string[] | null;
+  truths_and_lie: string[] | null;
+  sort_order: number | null;
+  created_at: string | null;
+  updated_at: string | null;
   fields: OCField[];
   feed: OCOpenFeed[];
+  images: string[] | null;
 }
 
-export interface ChatSessionWithOCs extends ChatSession {
+export interface ChatSessionWithOCs {
+  id: string;
+  oc1_id: string;
+  oc2_id: string;
+  oc2_user_id: string;
+  oc2_user_name: string | null;
+  oc2_name: string | null;
+  chat_level: number;
+  created_at: string | null;
+  images_allowed: boolean | null;
+  scene_id: string | null;
+  scene_name: string | null;
   oc1: OC | null;
   oc2: OC | null;
 }
@@ -24,8 +49,8 @@ export interface ChatSessionWithOCs extends ChatSession {
 export interface DashboardChat {
   id: string;
   chat_level: number;
-  my_oc: { id: string; name: string; image_url: string | null } | null;
-  partner_oc: { id: string; name: string; image_url: string | null } | null;
+  my_oc: { id: string; name: string; image_url: string | null; user_id: string } | null;
+  partner_oc: { id: string; name: string; image_url: string | null; user_id: string } | null;
   last_message: string | null;
   last_active_at: string | null;
   is_online: boolean;
@@ -293,8 +318,10 @@ export async function getSwipeCandidates(
     .from("ocs")
     .select("*, fields:oc_fields(*), feed:oc_open_feed(*)")
     .eq("is_swipable", true)
+    .eq("is_hidden", false)
     .neq("user_id", userId)
     .not("id", "in", `(${(swipedIds.size > 0 ? Array.from(swipedIds).join(",") : "00000000-0000-0000-0000-000000000000")})`)
+    .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
 
@@ -424,7 +451,7 @@ export async function getDashboardChats(userId: string): Promise<DashboardChat[]
   const { data: sessions, error } = await supabase
     .from("chat_sessions")
     .select(
-      "id, chat_level, created_at, oc1_id, oc2_id, oc2_name, oc1:ocs!oc1_id(id, name, image_url), oc2:ocs!oc2_id(id, name, image_url)"
+      "id, chat_level, created_at, oc1_id, oc2_id, oc2_name, oc1:ocs!oc1_id(id, name, image_url, user_id), oc2:ocs!oc2_id(id, name, image_url, user_id)"
     )
     .or(`oc1_id.in.(${myOcIds.join(",")}),oc2_user_id.eq.${userId}`)
     .order("created_at", { ascending: false });
@@ -450,8 +477,8 @@ export async function getDashboardChats(userId: string): Promise<DashboardChat[]
   }
 
   return (sessions ?? []).map((session) => {
-    const oc1 = (session.oc1 as unknown as { id: string; name: string; image_url: string | null } | null) ?? null;
-    const oc2 = (session.oc2 as unknown as { id: string; name: string; image_url: string | null } | null) ?? null;
+    const oc1 = (session.oc1 as unknown as { id: string; name: string; image_url: string | null; user_id: string } | null) ?? null;
+    const oc2 = (session.oc2 as unknown as { id: string; name: string; image_url: string | null; user_id: string } | null) ?? null;
     const myOc = myOcIds.includes(session.oc1_id) ? oc1 : oc2;
     const partnerOc = myOcIds.includes(session.oc1_id) ? oc2 : oc1;
     const last = lastMessages[session.id];
@@ -563,4 +590,22 @@ export async function uploadImage(file: File, prefix = "profile"): Promise<strin
   if (error) throw error;
   const { data } = supabase.storage.from("oc-images").getPublicUrl(path);
   return data.publicUrl;
+}
+
+export async function recordProfileView(viewerId: string, profileId: string): Promise<void> {
+  const supabase = getClient();
+  const { error } = await supabase
+    .from("profile_views")
+    .insert({ viewer_id: viewerId, profile_id: profileId });
+  if (error) throw error;
+}
+
+export async function getProfileViewCount(profileId: string): Promise<number> {
+  const supabase = getClient();
+  const { count, error } = await supabase
+    .from("profile_views")
+    .select("id", { count: "exact", head: true })
+    .eq("profile_id", profileId);
+  if (error) throw error;
+  return count ?? 0;
 }

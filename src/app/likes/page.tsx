@@ -17,12 +17,17 @@ import {
 } from "@/lib/supabase-queries";
 import { getPublicImageUrl, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
+import MatchModal from "@/components/match/MatchModal";
 
 export default function LikesPage() {
   const router = useRouter();
   const { user, isGuest, loading } = useAuth();
   const [likes, setLikes] = useState<IncomingLike[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [matchModalOpen, setMatchModalOpen] = useState(false);
+  const [matchedOc, setMatchedOc] = useState<{ name: string; image_url: string | null; id: string } | null>(null);
+  const [myOcForMatch, setMyOcForMatch] = useState<{ name: string; image_url: string | null } | null>(null);
+  const [matchedChatId, setMatchedChatId] = useState<string | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -56,10 +61,15 @@ export default function LikesPage() {
       await recordSwipe(like.to_oc_id, like.from_oc_id, "like");
       const mutual = await (await import("@/lib/supabase-queries")).checkMutualLike(like.to_oc_id, like.from_oc_id);
       if (mutual) {
-        await createChatSession(like.to_oc_id, like.from_oc_id, like.liker_oc?.user_id || "", null, like.liker_oc?.name || null);
+        const session = await createChatSession(like.to_oc_id, like.from_oc_id, like.liker_oc?.user_id || "", null, like.liker_oc?.name || null);
+        setMatchedOc({ name: like.liker_oc?.name || "Unknown", image_url: like.liker_oc?.image_url || null, id: like.from_oc_id });
+        setMyOcForMatch({ name: like.target_oc?.name || "Unknown", image_url: like.target_oc?.image_url || null });
+        setMatchedChatId(session.id);
+        setMatchModalOpen(true);
+      } else {
+        toast.success(`Liked ${like.liker_oc?.name} back!`);
       }
       setLikes((prev) => prev.filter((l) => l.id !== like.id));
-      toast.success(mutual ? `Matched with ${like.liker_oc?.name}!` : `Liked ${like.liker_oc?.name} back!`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to match");
     }
@@ -193,6 +203,16 @@ export default function LikesPage() {
           </>
         )}
       </main>
+      <MatchModal
+        open={matchModalOpen}
+        myOc={myOcForMatch}
+        matchedOc={matchedOc}
+        onStartChat={() => {
+          setMatchModalOpen(false);
+          if (matchedChatId) router.push(`/chat/${matchedChatId}`);
+        }}
+        onClose={() => setMatchModalOpen(false)}
+      />
     </>
   );
 }

@@ -13,9 +13,7 @@ import {
   User,
   Bell,
   ChevronDown,
-  Settings,
   ExternalLink,
-  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -177,22 +175,6 @@ export function DashboardHeader() {
                     </Link>
                   }
                 />
-                <DropdownMenuItem
-                  render={
-                    <Link href="/creator" className="cursor-pointer">
-                      <Settings className="mr-2 size-4" />
-                      Settings
-                    </Link>
-                  }
-                />
-                <DropdownMenuItem
-                  disabled
-                  className="cursor-not-allowed"
-                  onClick={() => toast.info("Account switching is coming soon")}
-                >
-                  <Users className="mr-2 size-4" />
-                  Switch Account
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -211,14 +193,14 @@ export function DashboardHeader() {
 
       {/* Mobile: sticky top bar */}
       <header className="sticky top-0 z-40 border-b border-white/10 bg-background/95 backdrop-blur-sm md:hidden">
-        <div className="flex h-12 items-center px-3">
+        <div className="flex h-12 items-center px-1.5">
           <Link href="/" className="flex shrink-0 items-center text-lg font-bold text-foreground">
             <Image
               src="/icon.avif"
               alt="Unhinged"
-              width={36}
-              height={36}
-              className="size-9 object-contain"
+              width={48}
+              height={48}
+              className="size-12 object-contain"
             />
           </Link>
 
@@ -230,7 +212,7 @@ export function DashboardHeader() {
                   <Link
                     href={link.href}
                     className={cn(
-                      "relative flex items-center justify-center overflow-hidden rounded-full p-2 text-muted-foreground transition-all duration-200 hover:text-foreground",
+                      "relative flex items-center justify-center overflow-hidden rounded-full p-0.5 text-muted-foreground transition-all duration-200 hover:text-foreground",
                       isActive
                         ? "bg-white/10 text-foreground active-glow"
                         : "hover:bg-white/5"
@@ -239,10 +221,10 @@ export function DashboardHeader() {
                     {isActive && (
                       <span className="pointer-events-none absolute inset-0 animate-light-beam bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
                     )}
-                    <link.icon className="relative z-10 size-4" />
+                    <link.icon className="relative z-10 size-8" />
                   </Link>
                   {link.href === "/likes" && likesCount > 0 && (
-                    <span className="absolute -top-0.5 right-0 z-30 flex min-w-[14px] items-center justify-center rounded-full bg-primary px-0.5 text-[7px] font-bold text-primary-foreground shadow-[0_0_6px_rgba(255,45,123,0.6)]">
+                    <span className="absolute -top-0.5 right-0 z-30 flex min-w-[16px] items-center justify-center rounded-full bg-primary px-0.5 text-[8px] font-bold text-primary-foreground shadow-[0_0_6px_rgba(255,45,123,0.6)]">
                       {likesCount > 99 ? "99+" : likesCount}
                     </span>
                   )}
@@ -256,13 +238,13 @@ export function DashboardHeader() {
               <DropdownMenuTrigger
                 render={
                   <button className="flex items-center gap-0.5 rounded-full p-0.5 transition-opacity hover:opacity-80">
-                    <Avatar className="size-8">
+                    <Avatar className="size-11">
                       <AvatarImage src={getPublicImageUrl(creatorAvatarUrl)} alt={creatorName || "Creator"} />
-                      <AvatarFallback className="text-[10px]">
-                        {creatorName ? getInitials(creatorName) : <User className="size-3.5" />}
+                      <AvatarFallback className="text-sm">
+                        {creatorName ? getInitials(creatorName) : <User className="size-5" />}
                       </AvatarFallback>
                     </Avatar>
-                    <ChevronDown className="size-3.5 text-muted-foreground" />
+                    <ChevronDown className="size-4 text-muted-foreground" />
                   </button>
                 }
               />
@@ -271,7 +253,7 @@ export function DashboardHeader() {
                   render={
                     <Link href="/creator" className="cursor-pointer">
                       <User className="mr-2 size-4" />
-                      Creator Profile
+                      Profile
                     </Link>
                   }
                 />

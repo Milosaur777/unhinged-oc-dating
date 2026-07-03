@@ -9,6 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -16,14 +23,16 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
       await signup(email, password);
-      toast.success("Check your email to confirm your account!");
-      router.push("/auth/login");
+      setRegisteredEmail(email);
+      setSignupSuccess(true);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Signup failed");
     } finally {
@@ -106,6 +115,44 @@ export default function SignupPage() {
           </Link>
         </p>
       </div>
+
+      {/* Confirmation Email Modal */}
+      <Dialog open={signupSuccess} onOpenChange={(open) => {
+        if (!open) {
+          setSignupSuccess(false);
+          router.push("/auth/login");
+        }
+      }}>
+        <DialogContent className="sm:max-w-md border-purple-500/20 bg-[#0e0e1a]">
+          <DialogHeader className="items-center text-center">
+            <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-purple-500/10 ring-1 ring-purple-500/20">
+              <Mail className="size-8 text-purple-400" />
+            </div>
+            <DialogTitle className="text-xl">Check your email</DialogTitle>
+            <DialogDescription className="text-center text-muted-foreground">
+              We sent a confirmation link to
+            </DialogDescription>
+            <p className="mt-1 text-sm font-medium text-foreground break-all">{registeredEmail}</p>
+          </DialogHeader>
+          <div className="mt-2 flex flex-col items-center gap-3 text-center text-sm text-muted-foreground">
+            <p>Click the link in the email to activate your account and start swiping.</p>
+            <div className="rounded-lg bg-white/5 px-4 py-3 text-xs text-muted-foreground">
+              <p className="font-medium text-foreground">Didn&apos;t get the email?</p>
+              <p className="mt-1">Check your spam folder or try signing up again.</p>
+            </div>
+            <Button
+              variant="outline"
+              className="mt-2 w-full"
+              onClick={() => {
+                setSignupSuccess(false);
+                router.push("/auth/login");
+              }}
+            >
+              Back to Login
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

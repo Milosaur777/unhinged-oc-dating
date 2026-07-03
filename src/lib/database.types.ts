@@ -7,6 +7,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -146,6 +148,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      kintwin_whitelist: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          sol_balance: number | null
+          updated_at: string | null
+          verified: boolean | null
+          wallet: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          sol_balance?: number | null
+          updated_at?: string | null
+          verified?: boolean | null
+          wallet: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          sol_balance?: number | null
+          updated_at?: string | null
+          verified?: boolean | null
+          wallet?: string
+        }
+        Relationships: []
       }
       match_preferences: {
         Row: {
@@ -343,6 +375,7 @@ export type Database = {
           id: string
           image_url: string | null
           images: string[] | null
+          is_hidden: boolean | null
           is_premade: boolean | null
           is_swipable: boolean
           name: string
@@ -358,6 +391,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           images?: string[] | null
+          is_hidden?: boolean | null
           is_premade?: boolean | null
           is_swipable?: boolean
           name?: string
@@ -373,6 +407,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           images?: string[] | null
+          is_hidden?: boolean | null
           is_premade?: boolean | null
           is_swipable?: boolean
           name?: string
@@ -384,20 +419,63 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_views: {
+        Row: {
+          created_at: string | null
+          id: string
+          profile_id: string
+          viewer_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          profile_id: string
+          viewer_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          profile_id?: string
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_views_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           bio: string | null
           created_at: string | null
+          creator_artfight: string | null
           creator_avatar_url: string | null
           creator_bio: string | null
+          creator_bluesky: string | null
+          creator_cara: string | null
+          creator_deviantart: string | null
           creator_discord: string | null
+          creator_furaffinity: string | null
           creator_header_url: string | null
+          creator_instagram: string | null
           creator_name: string | null
+          creator_sheezy: string | null
+          creator_toyhouse: string | null
+          creator_tumblr: string | null
+          creator_twitter: string | null
+          creator_unvale: string | null
           creator_visible: boolean | null
+          creator_weasyl: string | null
           creator_website: string | null
           display_name: string | null
           id: string
+          large_chat_text: boolean | null
+          social_links_visible: Json | null
           updated_at: string | null
           username: string | null
         }
@@ -405,15 +483,29 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          creator_artfight?: string | null
           creator_avatar_url?: string | null
           creator_bio?: string | null
+          creator_bluesky?: string | null
+          creator_cara?: string | null
+          creator_deviantart?: string | null
           creator_discord?: string | null
+          creator_furaffinity?: string | null
           creator_header_url?: string | null
+          creator_instagram?: string | null
           creator_name?: string | null
+          creator_sheezy?: string | null
+          creator_toyhouse?: string | null
+          creator_tumblr?: string | null
+          creator_twitter?: string | null
+          creator_unvale?: string | null
           creator_visible?: boolean | null
+          creator_weasyl?: string | null
           creator_website?: string | null
           display_name?: string | null
           id: string
+          large_chat_text?: boolean | null
+          social_links_visible?: Json | null
           updated_at?: string | null
           username?: string | null
         }
@@ -421,17 +513,184 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          creator_artfight?: string | null
           creator_avatar_url?: string | null
           creator_bio?: string | null
+          creator_bluesky?: string | null
+          creator_cara?: string | null
+          creator_deviantart?: string | null
           creator_discord?: string | null
+          creator_furaffinity?: string | null
           creator_header_url?: string | null
+          creator_instagram?: string | null
           creator_name?: string | null
+          creator_sheezy?: string | null
+          creator_toyhouse?: string | null
+          creator_tumblr?: string | null
+          creator_twitter?: string | null
+          creator_unvale?: string | null
           creator_visible?: boolean | null
+          creator_weasyl?: string | null
           creator_website?: string | null
           display_name?: string | null
           id?: string
+          large_chat_text?: boolean | null
+          social_links_visible?: Json | null
           updated_at?: string | null
           username?: string | null
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          created_at: string | null
+          details: string | null
+          id: string
+          reason: string
+          reported_oc_id: string
+          reporter_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          reason: string
+          reported_oc_id: string
+          reporter_id: string
+        }
+        Update: {
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          reason?: string
+          reported_oc_id?: string
+          reporter_id?: string
+        }
+        Relationships: []
+      }
+      Rudis_Leaderboard: {
+        Row: {
+          achievements: string[] | null
+          avatar: string | null
+          burn_score: number
+          created_at: string | null
+          display_name: string
+          id: string
+          rank: number | null
+          social_score: number
+          stake_score: number
+          total_score: number
+          updated_at: string | null
+          wallet: string
+        }
+        Insert: {
+          achievements?: string[] | null
+          avatar?: string | null
+          burn_score?: number
+          created_at?: string | null
+          display_name: string
+          id?: string
+          rank?: number | null
+          social_score?: number
+          stake_score?: number
+          total_score?: number
+          updated_at?: string | null
+          wallet: string
+        }
+        Update: {
+          achievements?: string[] | null
+          avatar?: string | null
+          burn_score?: number
+          created_at?: string | null
+          display_name?: string
+          id?: string
+          rank?: number | null
+          social_score?: number
+          stake_score?: number
+          total_score?: number
+          updated_at?: string | null
+          wallet?: string
+        }
+        Relationships: []
+      }
+      Rudis_NaughtyList: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          evidence: string | null
+          first_seen: string | null
+          flagged_reason: string
+          id: string
+          last_active: string | null
+          reports_count: number | null
+          severity: string | null
+          status: string | null
+          token_launches: number
+          updated_at: string | null
+          wallet: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          evidence?: string | null
+          first_seen?: string | null
+          flagged_reason?: string
+          id?: string
+          last_active?: string | null
+          reports_count?: number | null
+          severity?: string | null
+          status?: string | null
+          token_launches?: number
+          updated_at?: string | null
+          wallet: string
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          evidence?: string | null
+          first_seen?: string | null
+          flagged_reason?: string
+          id?: string
+          last_active?: string | null
+          reports_count?: number | null
+          severity?: string | null
+          status?: string | null
+          token_launches?: number
+          updated_at?: string | null
+          wallet?: string
+        }
+        Relationships: []
+      }
+      Rudis_StakingPositions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          lock_end_date: string | null
+          pool_id: string
+          rewards_claimed: number
+          start_date: string
+          wallet_address: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          lock_end_date?: string | null
+          pool_id: string
+          rewards_claimed?: number
+          start_date?: string
+          wallet_address: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          lock_end_date?: string | null
+          pool_id?: string
+          rewards_claimed?: number
+          start_date?: string
+          wallet_address?: string
         }
         Relationships: []
       }
@@ -589,3 +848,26 @@ export type Enums<
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const

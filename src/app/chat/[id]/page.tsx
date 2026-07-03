@@ -31,12 +31,17 @@ export default async function ChatPage({ params }: PageProps) {
     notFound();
   }
 
+  const myOcId = user?.id === oc1?.user_id
+    ? (session.oc1 as { id: string })?.id
+    : (session.oc2 as { id: string })?.id;
+
   return (
     <ChatWindow
       sessionId={session.id}
       oc1={session.oc1}
       oc2={session.oc2}
       oc2Name={session.oc2_name}
+      myOcId={myOcId}
     />
   );
 }

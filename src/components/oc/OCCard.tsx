@@ -217,6 +217,11 @@ export function OCCard({
             Guest OC
           </Badge>
         )}
+        {"is_hidden" in oc && oc.is_hidden && (
+          <Badge variant="outline" className="w-fit border-amber-500/30 text-[10px] text-amber-400">
+            Hidden
+          </Badge>
+        )}
       </div>
     </div>
   );

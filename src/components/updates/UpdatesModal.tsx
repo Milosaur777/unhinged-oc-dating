@@ -113,7 +113,7 @@ export function UpdatesModal({ children }: UpdatesModalProps) {
           <span className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(255,45,123,0.8)]" />
         )}
       </DialogTrigger>
-      <DialogContent className="max-h-[85vh] w-[95vw] max-w-md overflow-hidden p-0 sm:max-w-lg">
+      <DialogContent className="max-h-[85vh] w-[95vw] max-w-md overflow-y-auto p-0 sm:max-w-lg">
         <DialogHeader className="border-b border-white/10 px-5 py-4">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Bell className="size-5 text-primary" />

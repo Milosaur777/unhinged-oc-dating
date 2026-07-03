@@ -111,6 +111,37 @@ animation: light-beam 3s ease-in-out 2s infinite backwards;
 ```
 **When to use:** Any looping animation with a delay where the element should not be visible in its default state before the first sweep/cycle.
 
+### 13. Ko-Fi Links Need to Match Actual Account
+**Problem:** Ko-Fi donation links hardcoded as `ko-fi.com/unhinged` but actual account is `ko-fi.com/multimilo`.
+**Fix:** Search codebase for all `ko-fi.com` references and update to correct account. Check: Support page, ChatSidebar, email templates, creator profile placeholder text.
+
+### 14. Klipy API Integration (Replacing Tenor)
+**Problem:** Tenor API deprecated; migrated to Klipy API.
+**Key differences from Tenor:**
+- API key goes in URL path: `api.klipy.com/api/v1/{key}/gifs/search` (not query param)
+- Response structure: `data.data[]` not `results[]`
+- GIF URLs nested in `file.md.gif.url` (medium) or `file.sm.gif.url` (small)
+- Must add "Powered by KLIPY" attribution
+- Use `format_filter=gif` to get GIF format only
+- Pagination via `page` param
+- Trending endpoint: `gifs/trending` (no query needed)
+
+### 15. Email Template Compatibility
+**Problem:** Confirmation emails not arriving. HTML template used `<div>` with `linear-gradient` which some email clients (Proton, Outlook) strip or ignore.
+**Fix:** Use table-based layout with solid `background-color` instead of CSS gradients. Avoid `<div>` for layout — use `<table>` elements. Replace emoji characters with HTML entities (`&#10024;` instead of `✨`).
+
+### 16. Delete Account Button Location
+**Problem:** Delete Account was in DashboardHeader dropdown menu.
+**Fix:** Moved to Creator Profile section above Save Profile button. Black button with red accent, white text. DashboardHeader now only has Profile, Notifications, Support, Log out.
+
+### 17. Header Auto-Save
+**Problem:** Users had to scroll down and click Save Profile just to change their banner.
+**Fix:** Header (banner) auto-saves when:
+- A preset header is clicked → `upsertProfile({ creator_header_url })` immediately
+- A custom image is uploaded → `upsertProfile({ creator_header_url })` immediately
+- The header is removed → `clearProfileField("creator_header_url")` immediately
+All other fields still require the Save Profile button.
+
 ---
 
 ## Key Architecture Decisions

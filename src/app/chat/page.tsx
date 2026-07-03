@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { getChatSessions, deleteChatSession, ChatSessionWithOCs } from "@/lib/supabase-queries";
+import { useMessagePresence } from "@/lib/useMessagePresence";
 import { getPublicImageUrl, getInitials, cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -49,6 +50,22 @@ export default function ChatListPage() {
   const [deleteTarget, setDeleteTarget] = useState<ChatSessionWithOCs | null>(null);
   const [confirmName, setConfirmName] = useState("");
   const [query, setQuery] = useState("");
+
+  const ocIdToUserId = useMemo(() => {
+    const map = new Map<string, string>();
+    sessions.forEach((session) => {
+      const theirOC = session.oc1?.user_id === user?.id ? session.oc2 : session.oc1;
+      if (theirOC?.id && theirOC?.user_id) {
+        map.set(theirOC.id, theirOC.user_id);
+      }
+    });
+    return map;
+  }, [sessions, user?.id]);
+
+  const isOnline = useMessagePresence(
+    user && !("is_guest" in user) ? user.id : null,
+    ocIdToUserId
+  );
 
   useEffect(() => {
     if (loading) return;
@@ -83,7 +100,9 @@ export default function ChatListPage() {
 
   async function handleDelete() {
     if (!deleteTarget) return;
-    const otherName = deleteTarget.oc2_name || deleteTarget.oc2?.name || "";
+    const myOC = deleteTarget.oc1?.user_id === user?.id ? deleteTarget.oc1 : deleteTarget.oc2;
+    const theirOC = deleteTarget.oc1?.user_id === user?.id ? deleteTarget.oc2 : deleteTarget.oc1;
+    const otherName = theirOC?.name || deleteTarget.oc2_name || "";
     if (confirmName !== otherName) return;
     try {
       await deleteChatSession(deleteTarget.id);
@@ -98,11 +117,11 @@ export default function ChatListPage() {
   }
 
   function getMyOC(session: ChatSessionWithOCs) {
-    return session.oc1;
+    return session.oc1?.user_id === user?.id ? session.oc1 : session.oc2;
   }
 
   function getTheirOC(session: ChatSessionWithOCs) {
-    return session.oc2;
+    return session.oc1?.user_id === user?.id ? session.oc2 : session.oc1;
   }
 
   if (loading) {
@@ -179,6 +198,8 @@ export default function ChatListPage() {
               const theirImage = getPublicImageUrl(theirOC?.image_url);
               const lastMessage = (session as unknown as Record<string, unknown>).last_message as string | undefined;
               const lastActive = (session as unknown as Record<string, unknown>).last_active_at as string | undefined;
+              const theirUserId = session.oc1?.user_id === user?.id ? session.oc2?.user_id : session.oc1?.user_id;
+              const isPartnerOnline = theirUserId ? isOnline(theirUserId) : false;
 
               return (
                 <div
@@ -192,7 +213,7 @@ export default function ChatListPage() {
                         onClick={(e) => e.stopPropagation()}
                         className="relative shrink-0 cursor-pointer"
                       >
-                        <div className="relative size-16 overflow-hidden rounded-full border-2 border-background bg-muted transition-all duration-200 hover:ring-2 hover:ring-primary/50">
+                        <div className="relative size-16 overflow-hidden rounded-full bg-muted transition-all duration-200 hover:ring-2 hover:ring-primary/50">
                           {theirImage ? (
                             <Image
                               src={theirImage}
@@ -207,7 +228,12 @@ export default function ChatListPage() {
                             </div>
                           )}
                         </div>
-                        <span className="absolute right-0 bottom-0 size-3.5 rounded-full border-2 border-background bg-green-500" />
+                        <span
+                          className={cn(
+                            "absolute right-0 bottom-0 size-3.5 rounded-full border-2 border-background",
+                            isPartnerOnline ? "bg-green-500" : "bg-muted-foreground"
+                          )}
+                        />
                       </Link>
 
                       <div className="min-w-0 flex-1">
@@ -253,7 +279,7 @@ export default function ChatListPage() {
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        className="shrink-0 opacity-0 group-hover/card:opacity-100"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/card:opacity-100"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -277,7 +303,13 @@ export default function ChatListPage() {
           <DialogHeader>
             <DialogTitle>Delete Chat</DialogTitle>
             <DialogDescription>
-              Type <strong>{deleteTarget?.oc2_name || deleteTarget?.oc2?.name}</strong> to confirm.
+              Type <strong>{
+                (() => {
+                  if (!deleteTarget) return "";
+                  const theirOC = deleteTarget.oc1?.user_id === user?.id ? deleteTarget.oc2 : deleteTarget.oc1;
+                  return theirOC?.name || deleteTarget.oc2_name || "";
+                })()
+              }</strong> to confirm.
             </DialogDescription>
           </DialogHeader>
           <Input
@@ -292,7 +324,13 @@ export default function ChatListPage() {
             <Button
               variant="destructive"
               onClick={handleDelete}
-              disabled={confirmName !== (deleteTarget?.oc2_name || deleteTarget?.oc2?.name)}
+              disabled={
+                confirmName !== (() => {
+                  if (!deleteTarget) return "";
+                  const theirOC = deleteTarget.oc1?.user_id === user?.id ? deleteTarget.oc2 : deleteTarget.oc1;
+                  return theirOC?.name || deleteTarget.oc2_name || "";
+                })()
+              }
             >
               Delete
             </Button>

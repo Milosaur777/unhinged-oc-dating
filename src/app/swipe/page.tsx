@@ -22,9 +22,25 @@ import {
 } from "@/lib/supabase-queries";
 import { getPublicImageUrl, getInitials, cn } from "@/lib/utils";
 import { toast } from "sonner";
+import MatchModal from "@/components/match/MatchModal";
 
-const SWIPE_THRESHOLD = 100;
-const VELOCITY_THRESHOLD = 500;
+const SWIPE_KEY = "unhinged_swipe_state";
+
+interface SwipeState {
+  ocId: string;
+  index: number;
+  targetOcId?: string;
+}
+
+function getSwipeThreshold() {
+  if (typeof window === "undefined") return 100;
+  return window.innerWidth >= 768 ? 120 : 100;
+}
+
+function getVelocityThreshold() {
+  if (typeof window === "undefined") return 500;
+  return window.innerWidth >= 768 ? 500 : 500;
+}
 
 function getField(oc: OCWithDetails, key: string): string | null {
   return oc.fields.find((f) => f.field_key === key && f.visible !== false)?.value ?? null;
@@ -39,6 +55,10 @@ export default function SwipePage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dataLoading, setDataLoading] = useState(true);
   const [resetting, setResetting] = useState(false);
+  const [matchModalOpen, setMatchModalOpen] = useState(false);
+  const [matchedOc, setMatchedOc] = useState<{ name: string; image_url: string | null; id: string } | null>(null);
+  const [myOcForMatch, setMyOcForMatch] = useState<{ name: string; image_url: string | null } | null>(null);
+  const [matchedChatId, setMatchedChatId] = useState<string | null>(null);
   const suppressTapRef = useRef(false);
 
   useEffect(() => {
@@ -53,7 +73,19 @@ export default function SwipePage() {
       try {
         const ocs = await getUserOCs(user!.id);
         setMyOCs(ocs);
-        if (ocs.length === 1) {
+        const saved = sessionStorage.getItem(SWIPE_KEY);
+        if (saved) {
+          try {
+            const state: SwipeState = JSON.parse(saved);
+            if (ocs.some((o) => o.id === state.ocId)) {
+              setSelectedOcId(state.ocId);
+            } else if (ocs.length === 1) {
+              setSelectedOcId(ocs[0].id);
+            }
+          } catch {
+            if (ocs.length === 1) setSelectedOcId(ocs[0].id);
+          }
+        } else if (ocs.length === 1) {
           setSelectedOcId(ocs[0].id);
         }
       } catch (err) {
@@ -68,12 +100,46 @@ export default function SwipePage() {
   useEffect(() => {
     if (!selectedOcId || !user) return;
     let cancelled = false;
+
+    const saved = sessionStorage.getItem(SWIPE_KEY);
+    if (saved && candidates.length > 0) {
+      try {
+        const state: SwipeState = JSON.parse(saved);
+        if (state.ocId === selectedOcId) {
+          if (state.targetOcId) {
+            const idx = candidates.findIndex((c) => c.id === state.targetOcId);
+            if (idx !== -1) setCurrentIndex(idx);
+          } else if (state.index < candidates.length) {
+            setCurrentIndex(state.index);
+          }
+        }
+      } catch {}
+      sessionStorage.removeItem(SWIPE_KEY);
+      return;
+    }
+
     async function load() {
       try {
         const fresh = await getSwipeCandidates([selectedOcId!], user!.id);
         if (!cancelled) {
           setCandidates(fresh);
-          setCurrentIndex(0);
+          const savedSession = sessionStorage.getItem(SWIPE_KEY);
+          if (savedSession) {
+            try {
+              const state: SwipeState = JSON.parse(savedSession);
+              if (state.ocId === selectedOcId) {
+                if (state.targetOcId) {
+                  const idx = fresh.findIndex((c) => c.id === state.targetOcId);
+                  if (idx !== -1) setCurrentIndex(idx);
+                } else if (state.index < fresh.length) {
+                  setCurrentIndex(state.index);
+                }
+              }
+            } catch {}
+            sessionStorage.removeItem(SWIPE_KEY);
+          } else {
+            setCurrentIndex(0);
+          }
         }
       } catch (err) {
         if (!cancelled) toast.error(err instanceof Error ? err.message : "Failed to load candidates");
@@ -104,18 +170,23 @@ export default function SwipePage() {
   function handleResult(action: "like" | "pass") {
     if (!current || !selectedOcId) return;
 
+    const myOc = myOCs.find((o) => o.id === selectedOcId);
+
     recordSwipe(selectedOcId, current.id, action).then(async () => {
       if (action === "like") {
         const mutual = await checkMutualLike(selectedOcId, current.id);
         if (mutual) {
-          await createChatSession(
+          const session = await createChatSession(
             selectedOcId,
             current.id,
             current.user_id,
             null,
             current.name
           );
-          toast.success(`It's a match with ${current.name}!`);
+          setMatchedOc({ name: current.name, image_url: current.image_url, id: current.id });
+          setMyOcForMatch(myOc ? { name: myOc.name, image_url: myOc.image_url } : null);
+          setMatchedChatId(session.id);
+          setMatchModalOpen(true);
         }
       }
       setCurrentIndex((i) => i + 1);
@@ -255,7 +326,7 @@ export default function SwipePage() {
           </div>
 
           {candidates.length === 0 || currentIndex >= candidates.length ? (
-            <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl py-12 text-center">
+            <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl py-12 mt-8 text-center">
               <Flame className="size-12 text-muted-foreground" />
               <h2 className="text-xl font-semibold">No more cards</h2>
               <p className="text-sm text-muted-foreground">
@@ -280,6 +351,8 @@ export default function SwipePage() {
                   oc={current}
                   onResult={handleResult}
                   suppressTapRef={suppressTapRef}
+                  selectedOcId={selectedOcId}
+                  currentIndex={currentIndex}
                 />
               </div>
               <div className="mt-6 flex items-center justify-center gap-4 pb-6">
@@ -305,6 +378,16 @@ export default function SwipePage() {
           )}
         </div>
       </main>
+      <MatchModal
+        open={matchModalOpen}
+        myOc={myOcForMatch}
+        matchedOc={matchedOc}
+        onStartChat={() => {
+          setMatchModalOpen(false);
+          if (matchedChatId) router.push(`/chat/${matchedChatId}`);
+        }}
+        onClose={() => setMatchModalOpen(false)}
+      />
     </>
   );
 }
@@ -313,9 +396,11 @@ interface SwipeCardProps {
   oc: OCWithDetails;
   onResult: (action: "like" | "pass") => void;
   suppressTapRef: React.MutableRefObject<boolean>;
+  selectedOcId: string | null;
+  currentIndex: number;
 }
 
-function SwipeCard({ oc, onResult, suppressTapRef }: SwipeCardProps) {
+function SwipeCard({ oc, onResult, suppressTapRef, selectedOcId, currentIndex }: SwipeCardProps) {
   const router = useRouter();
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-400, 400], [-25, 25]);
@@ -323,10 +408,16 @@ function SwipeCard({ oc, onResult, suppressTapRef }: SwipeCardProps) {
   const nopeOpacity = useTransform(x, [-150, -50], [1, 0]);
   const cardRef = useRef<HTMLDivElement>(null);
   const imageUrl = getPublicImageUrl(oc.image_url);
+  const dragOccurred = useRef(false);
 
   function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
+    if (!dragOccurred.current) {
+      animate(x, 0, { type: "spring", stiffness: 500, damping: 30 });
+      return;
+    }
+
     const shouldFlyOut =
-      Math.abs(info.offset.x) > SWIPE_THRESHOLD || Math.abs(info.velocity.x) > VELOCITY_THRESHOLD;
+      Math.abs(info.offset.x) > getSwipeThreshold() || Math.abs(info.velocity.x) > getVelocityThreshold();
 
     if (shouldFlyOut) {
       suppressTapRef.current = true;
@@ -350,18 +441,24 @@ function SwipeCard({ oc, onResult, suppressTapRef }: SwipeCardProps) {
       animate(x, 0, { type: "spring", stiffness: 500, damping: 30 });
       setTimeout(() => {
         suppressTapRef.current = false;
+        dragOccurred.current = false;
       }, 100);
     }
   }
 
   function handleDrag() {
+    dragOccurred.current = true;
     suppressTapRef.current = true;
   }
 
   function handleClick() {
     if (suppressTapRef.current) {
       suppressTapRef.current = false;
+      dragOccurred.current = false;
       return;
+    }
+    if (selectedOcId) {
+      sessionStorage.setItem(SWIPE_KEY, JSON.stringify({ ocId: selectedOcId, index: currentIndex, targetOcId: oc.id }));
     }
     router.push(`/oc/${oc.id}?card=swipe&oc=${oc.id}`);
   }

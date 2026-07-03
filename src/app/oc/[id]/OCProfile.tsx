@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -9,9 +10,10 @@ import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import { TagPillList } from "@/components/ui/TagPill";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { OCWithDetails, OCField } from "@/lib/supabase-queries";
+import { OCWithDetails, OCField, Profile, recordProfileView } from "@/lib/supabase-queries";
 import { getPublicImageUrl, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase";
 
 interface OCProfileProps {
   oc: OCWithDetails;
@@ -28,6 +30,29 @@ function getField(oc: OCWithDetails, key: string): OCField | undefined {
 export function OCProfile({ oc, isOwner, backToSwipe, fromOc, fromPage }: OCProfileProps) {
   const router = useRouter();
   const imageUrl = getPublicImageUrl(oc.image_url);
+  const [creatorProfile, setCreatorProfile] = useState<Profile | null>(null);
+
+  useEffect(() => {
+    async function loadCreator() {
+      try {
+        const supabase = createClient();
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", oc.user_id)
+          .single();
+        if (profile) setCreatorProfile(profile);
+
+        if (!isOwner) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            recordProfileView(user.id, oc.user_id).catch(() => {});
+          }
+        }
+      } catch {}
+    }
+    loadCreator();
+  }, [oc.user_id, isOwner]);
 
   function handleBack(e: React.MouseEvent) {
     e.preventDefault();
@@ -35,6 +60,18 @@ export function OCProfile({ oc, isOwner, backToSwipe, fromOc, fromPage }: OCProf
       router.push("/likes");
     } else if (fromPage === "chat") {
       router.push("/chat");
+    } else if (fromPage === "dashboard") {
+      const saved = sessionStorage.getItem("unhinged_dashboard_scroll");
+      if (saved) {
+        const y = parseInt(saved, 10);
+        sessionStorage.removeItem("unhinged_dashboard_scroll");
+        router.push("/", { scroll: false });
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: y, behavior: "auto" });
+        });
+      } else {
+        router.push("/", { scroll: false });
+      }
     } else if (backToSwipe) {
       router.push("/swipe");
     } else {
@@ -71,14 +108,6 @@ export function OCProfile({ oc, isOwner, backToSwipe, fromOc, fromPage }: OCProf
             <ArrowLeft className="size-4" />
             Back
           </Button>
-          {backToSwipe && !fromPage && (
-            <Link
-              href={`/swipe?card=${backToSwipe}&oc=${fromOc || ""}`}
-              className="flex w-fit items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Back to Swipe
-            </Link>
-          )}
         </div>
 
         <div className="flex flex-col gap-6 lg:flex-row">
@@ -294,6 +323,35 @@ export function OCProfile({ oc, isOwner, backToSwipe, fromOc, fromPage }: OCProf
             </p>
           </div>
         </div>
+
+        {creatorProfile && (
+          <Link
+            href={`/creator/${oc.user_id}`}
+            className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl transition-colors hover:bg-white/[0.06]"
+          >
+            <div className="relative size-10 overflow-hidden rounded-full ring-2 ring-pink-500/30">
+              {creatorProfile.creator_avatar_url || creatorProfile.avatar_url ? (
+                <Image
+                  src={getPublicImageUrl(creatorProfile.creator_avatar_url || creatorProfile.avatar_url)}
+                  alt={creatorProfile.creator_name || creatorProfile.username || "Creator"}
+                  fill
+                  className="object-cover"
+                  sizes="40px"
+                />
+              ) : (
+                <div className="flex size-full items-center justify-center bg-zinc-800 text-sm font-bold text-muted-foreground">
+                  {getInitials(creatorProfile.creator_name || creatorProfile.username || "?")}
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-muted-foreground">Created by</span>
+              <span className="text-sm font-medium text-foreground">
+                {creatorProfile.creator_name || creatorProfile.username || "Anonymous"}
+              </span>
+            </div>
+          </Link>
+        )}
       </main>
     </>
   );

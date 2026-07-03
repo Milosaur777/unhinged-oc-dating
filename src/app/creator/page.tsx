@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import {
   User,
@@ -11,8 +12,7 @@ import {
   EyeOff,
   Upload,
   X,
-  Accessibility,
-  Coffee,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -30,6 +38,8 @@ import {
   toggleAllOCSwipable,
   uploadImage,
   clearProfileField,
+  Profile,
+  OC,
 } from "@/lib/supabase-queries";
 import { getPublicImageUrl, cn, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
@@ -58,7 +68,7 @@ const PRESET_HEADERS = [
   { name: "Abstract", path: "/headers/Abstract.avif" },
   { name: "Alchemist", path: "/headers/Alchemist.avif" },
   { name: "Beach", path: "/headers/Beach.avif" },
-  { name: "Bedroom", path: "/headers/Bedroom.avif" },
+  { name: "Window", path: "/headers/Bedroom.avif" },
   { name: "Cantina", path: "/headers/Cantina.avif" },
   { name: "Church", path: "/headers/Church.avif" },
   { name: "Dungeon", path: "/headers/Dungeon.avif" },
@@ -66,7 +76,7 @@ const PRESET_HEADERS = [
   { name: "Gala", path: "/headers/Gala.avif" },
   { name: "Infinity Pool", path: "/headers/InfinityPoolPenthouse.avif" },
   { name: "Lux Sofa", path: "/headers/LuxSofa.avif" },
-  { name: "Master Bedroom", path: "/headers/MasterBedroom.avif" },
+  { name: "Bedroom", path: "/headers/MasterBedroom.avif" },
   { name: "Mine", path: "/headers/Mine.avif" },
   { name: "Neon Bar", path: "/headers/NeonBar.avif" },
   { name: "Nightsky", path: "/headers/Nightsky.avif" },
@@ -86,6 +96,10 @@ export default function CreatorPage() {
   const [toggling, setToggling] = useState(false);
   const [uploadingHeader, setUploadingHeader] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const headerInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -97,12 +111,25 @@ export default function CreatorPage() {
     creatorBio: "",
     creatorDiscord: "",
     creatorWebsite: "",
-    creatorKofi: "",
     creatorHeaderUrl: "",
     creatorAvatarUrl: "",
     creatorVisible: true,
-    highContrast: false,
-    textScaling: false,
+    largeChatText: false,
+    socialLinks: {
+      tumblr: "",
+      twitter: "",
+      bluesky: "",
+      instagram: "",
+      artfight: "",
+      toyhouse: "",
+      sheezy: "",
+      deviantart: "",
+      furaffinity: "",
+      weasyl: "",
+      unpale: "",
+      cara: "",
+    } as Record<string, string>,
+    socialLinksVisible: {} as Record<string, boolean>,
   });
 
   useEffect(() => {
@@ -118,7 +145,7 @@ export default function CreatorPage() {
         const [profileData, ocs] = await Promise.all([
           getProfile(user!.id),
           getUserOCs(user!.id),
-        ]);
+        ]) as [Profile | null, OC[]];
         setForm({
           username: profileData?.username || "",
           displayName: profileData?.display_name || "",
@@ -127,12 +154,25 @@ export default function CreatorPage() {
           creatorBio: profileData?.creator_bio || "",
           creatorDiscord: profileData?.creator_discord || "",
           creatorWebsite: profileData?.creator_website || "",
-          creatorKofi: "",
           creatorHeaderUrl: profileData?.creator_header_url || "",
           creatorAvatarUrl: profileData?.creator_avatar_url || "",
           creatorVisible: profileData?.creator_visible ?? true,
-          highContrast: false,
-          textScaling: false,
+          largeChatText: profileData?.large_chat_text ?? false,
+          socialLinks: {
+            tumblr: profileData?.creator_tumblr || "",
+            twitter: profileData?.creator_twitter || "",
+            bluesky: profileData?.creator_bluesky || "",
+            instagram: profileData?.creator_instagram || "",
+            artfight: profileData?.creator_artfight || "",
+            toyhouse: profileData?.creator_toyhouse || "",
+            sheezy: profileData?.creator_sheezy || "",
+            deviantart: profileData?.creator_deviantart || "",
+            furaffinity: profileData?.creator_furaffinity || "",
+            weasyl: profileData?.creator_weasyl || "",
+            unpale: profileData?.creator_unvale || "",
+            cara: profileData?.creator_cara || "",
+          },
+          socialLinksVisible: (profileData?.social_links_visible as Record<string, boolean>) || {},
         });
         setAllSwipable(ocs.every((o) => o.is_swipable));
       } catch (err) {
@@ -164,6 +204,20 @@ export default function CreatorPage() {
         creator_header_url: form.creatorHeaderUrl || null,
         creator_avatar_url: form.creatorAvatarUrl || null,
         creator_visible: form.creatorVisible,
+        large_chat_text: form.largeChatText,
+        creator_tumblr: form.socialLinks.tumblr || null,
+        creator_twitter: form.socialLinks.twitter || null,
+        creator_bluesky: form.socialLinks.bluesky || null,
+        creator_instagram: form.socialLinks.instagram || null,
+        creator_artfight: form.socialLinks.artfight || null,
+        creator_toyhouse: form.socialLinks.toyhouse || null,
+        creator_sheezy: form.socialLinks.sheezy || null,
+        creator_deviantart: form.socialLinks.deviantart || null,
+        creator_furaffinity: form.socialLinks.furaffinity || null,
+        creator_weasyl: form.socialLinks.weasyl || null,
+        creator_unvale: form.socialLinks.unpale || null,
+        creator_cara: form.socialLinks.cara || null,
+        social_links_visible: form.socialLinksVisible,
       });
       toast.success("Profile saved");
     } catch (err) {
@@ -180,7 +234,8 @@ export default function CreatorPage() {
     try {
       const path = await uploadImage(file, "headers");
       setForm((prev) => ({ ...prev, creatorHeaderUrl: path }));
-      toast.success("Banner uploaded — click Save to apply");
+      await upsertProfile({ id: user.id, creator_header_url: path });
+      toast.success("Banner saved");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to upload banner");
     } finally {
@@ -239,6 +294,25 @@ export default function CreatorPage() {
       toast.error(err instanceof Error ? err.message : "Failed to toggle");
     } finally {
       setToggling(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    if (!user || isGuest) return;
+    setDeleting(true);
+    try {
+      const { createClient } = await import("@/lib/supabase");
+      const supabase = createClient();
+      await supabase.from("ocs").delete().eq("user_id", user.id);
+      await supabase.from("profiles").delete().eq("id", user.id);
+      await supabase.auth.signOut();
+      toast.success("Your account has been deleted. Thank you for being part of the Unhinged community.");
+      router.push("/auth");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete account");
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
     }
   }
 
@@ -369,7 +443,17 @@ export default function CreatorPage() {
                   <button
                     key={h.path}
                     type="button"
-                    onClick={() => setForm((prev) => ({ ...prev, creatorHeaderUrl: h.path }))}
+                    onClick={async () => {
+                      setForm((prev) => ({ ...prev, creatorHeaderUrl: h.path }));
+                      if (user && !isGuest) {
+                        try {
+                          await upsertProfile({ id: user.id, creator_header_url: h.path });
+                          toast.success("Banner saved");
+                        } catch {
+                          toast.error("Failed to save banner");
+                        }
+                      }
+                    }}
                     className="group relative flex flex-col overflow-hidden rounded-lg border border-border transition-all hover:border-primary/50 hover:ring-1 hover:ring-primary/30"
                     onContextMenu={(e) => e.preventDefault()}
                     onDragStart={(e) => e.preventDefault()}
@@ -512,23 +596,6 @@ export default function CreatorPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5 sm:col-span-2">
-              <Label htmlFor="creatorKofi">
-                <span className="inline-flex items-center gap-1.5">
-                  <Coffee className="size-4" />
-                  Ko-Fi Link
-                </span>
-              </Label>
-              <Input
-                id="creatorKofi"
-                value={form.creatorKofi}
-                onChange={(e) => update("creatorKofi", e.target.value)}
-                placeholder="https://ko-fi.com/..."
-              />
-              <p className="text-xs text-muted-foreground">
-                Placeholder — will be wired to your creator card in a future update.
-              </p>
-            </div>
-            <div className="flex flex-col gap-1.5 sm:col-span-2">
               <Label htmlFor="creatorBio">Creator Bio</Label>
               <Textarea
                 id="creatorBio"
@@ -539,6 +606,46 @@ export default function CreatorPage() {
               />
             </div>
           </div>
+          <div className="flex flex-col gap-4 mt-4">
+              <h3 className="text-sm font-semibold text-muted-foreground">Social Links</h3>
+              <p className="text-xs text-muted-foreground">Add your profiles. Empty fields won&apos;t be shown publicly.</p>
+              {[
+                { key: "tumblr", label: "Tumblr", placeholder: "yourname.tumblr.com" },
+                { key: "twitter", label: "Twitter", placeholder: "@yourhandle" },
+                { key: "bluesky", label: "Bluesky", placeholder: "user.bsky.social" },
+                { key: "instagram", label: "Instagram", placeholder: "@yourhandle" },
+                { key: "artfight", label: "Art Fight", placeholder: "artfight.net/user/yourname" },
+                { key: "toyhouse", label: "Toyhouse", placeholder: "toyhou.se/yourname" },
+                { key: "sheezy", label: "Sheezy", placeholder: "sheezy.art/yourname" },
+                { key: "deviantart", label: "deviantART", placeholder: "deviantart.com/yourname" },
+                { key: "furaffinity", label: "FurAffinity", placeholder: "furaffinity.net/user/yourname" },
+                { key: "weasyl", label: "Weasyl", placeholder: "weasyl.com/~yourname" },
+                { key: "unpale", label: "Unvale", placeholder: "unvale.io/yourname" },
+                { key: "cara", label: "Cara", placeholder: "cara.app/yourname" },
+              ].map((field) => (
+                <div key={field.key} className="flex flex-col gap-1.5">
+                  <Label className="text-sm">{field.label}</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={form.socialLinks[field.key] || ""}
+                      onChange={(e) => setForm((prev) => ({ ...prev, socialLinks: { ...prev.socialLinks, [field.key]: e.target.value } }))}
+                      placeholder={field.placeholder}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => setForm((prev) => ({ ...prev, socialLinksVisible: { ...prev.socialLinksVisible, [field.key]: !prev.socialLinksVisible[field.key] } }))}
+                      className={cn("shrink-0", form.socialLinksVisible[field.key] ? "text-primary" : "text-muted-foreground")}
+                      aria-label={form.socialLinksVisible[field.key] ? "Hide from public profile" : "Show on public profile"}
+                    >
+                      {form.socialLinksVisible[field.key] ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           <div className="mt-4 flex items-center justify-between gap-4">
             <Label htmlFor="creatorVisible">Show creator card on profiles</Label>
             <Button
@@ -554,38 +661,19 @@ export default function CreatorPage() {
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6 ring-1 ring-foreground/10">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-            <Accessibility className="size-5" />
-            Accessibility
-          </h2>
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="font-medium">High contrast</p>
-                <p className="text-sm text-muted-foreground">
-                  Increase contrast across the interface.
-                </p>
+              <h2 className="text-lg font-semibold">Chat Settings</h2>
+              <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.02] p-3">
+                <div className="flex flex-col gap-0.5">
+                  <Label className="text-sm font-medium">Large Chat Text</Label>
+                  <p className="text-xs text-muted-foreground">Increase text size in chat messages for better readability.</p>
+                </div>
+                <Switch
+                  checked={form.largeChatText}
+                  onCheckedChange={(checked) => update("largeChatText", checked)}
+                />
               </div>
-              <Switch
-                checked={form.highContrast}
-                onCheckedChange={(v) => update("highContrast", v)}
-                aria-label="High contrast"
-              />
             </div>
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="font-medium">Text scaling</p>
-                <p className="text-sm text-muted-foreground">
-                  Enlarge body text for better readability.
-                </p>
-              </div>
-              <Switch
-                checked={form.textScaling}
-                onCheckedChange={(v) => update("textScaling", v)}
-                aria-label="Text scaling"
-              />
-            </div>
-          </div>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6 ring-1 ring-foreground/10">
@@ -609,11 +697,77 @@ export default function CreatorPage() {
           </div>
         </div>
 
-        <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
-          <Save className="size-4" />
-          {saving ? "Saving..." : "Save Profile"}
-        </Button>
+        <div className="flex flex-col gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setShowDeleteDialog(true)}
+            className="w-full gap-2 border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300"
+          >
+            <Trash2 className="size-4" />
+            Delete Account
+          </Button>
+          <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
+            <Save className="size-4" />
+            {saving ? "Saving..." : "Save Profile"}
+          </Button>
+        </div>
       </main>
+
+      {/* Delete Account Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Delete Account</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. All your OCs and profile data will be permanently deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3">
+            <Label className="text-sm font-medium">Why are you leaving?</Label>
+            <div className="flex flex-col gap-2">
+              {[
+                "Not for me",
+                "Found someone",
+                "Too many bugs",
+                "Creating a new account",
+                "Other",
+              ].map((reason) => (
+                <label key={reason} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <input
+                    type="radio"
+                    name="delete-reason"
+                    value={reason}
+                    checked={deleteReason === reason}
+                    onChange={(e) => setDeleteReason(e.target.value)}
+                    className="accent-destructive"
+                  />
+                  {reason}
+                </label>
+              ))}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-sm">
+                Type your username <span className="font-bold">{user && !("is_guest" in user) ? (user as unknown as { user_metadata?: { username?: string } }).user_metadata?.username || user.email?.split("@")[0] || "" : user?.email?.split("@")[0] || ""}</span> to confirm
+              </Label>
+              <Input
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                placeholder="Username"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              disabled={deleteConfirm !== (user && !("is_guest" in user) ? (user as unknown as { user_metadata?: { username?: string } }).user_metadata?.username || user.email?.split("@")[0] || "" : user?.email?.split("@")[0] || "") || !deleteReason}
+              onClick={handleDeleteAccount}
+            >
+              {deleting ? "Deleting..." : "Delete Account"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

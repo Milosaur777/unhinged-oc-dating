@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://unhinged-rp.vercel.app"),
   title: "Unhinged - RP Dating Platform",
   description: "Match with roleplaying characters, swipe, chat, and connect.",
   openGraph: {
@@ -41,11 +42,8 @@ export const metadata: Metadata = {
     images: ["/og-image.png"],
   },
   icons: {
-    icon: [
-      { url: "/favicon.ico?v=2", sizes: "48x48" },
-      { url: "/favicon.png?v=2", type: "image/png", sizes: "512x512" },
-    ],
-    apple: "/apple-icon.png?v=2",
+    icon: [{ url: "/app-icon.ico", sizes: "48x48" }],
+    apple: "/apple-icon.png?v=4",
   },
 };
 
@@ -68,9 +66,8 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <link rel="icon" href="/favicon.ico?v=2" sizes="48x48" />
-        <link rel="icon" type="image/png" href="/favicon.png?v=2" sizes="512x512" />
-        <link rel="apple-touch-icon" href="/apple-icon.png?v=2" />
+        <link rel="shortcut icon" href="/app-icon.ico" />
+        <link rel="icon" type="image/x-icon" href="/app-icon.ico" />
       </head>
       <body className="noise-bg min-h-full flex flex-col bg-background text-foreground">
         <AuthProvider>

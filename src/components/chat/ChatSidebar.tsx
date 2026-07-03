@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { PanelLeftClose, PanelLeftOpen, MessageCircle, ExternalLink, Coffee } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { PanelLeftClose, PanelLeftOpen, MessageCircle, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { getDashboardChats, DashboardChat } from "@/lib/supabase-queries";
+import { useMessagePresence } from "@/lib/useMessagePresence";
 import { getPublicImageUrl, getInitials, cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -17,6 +18,21 @@ export function ChatSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [chats, setChats] = useState<DashboardChat[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const ocIdToUserId = useMemo(() => {
+    const map = new Map<string, string>();
+    chats.forEach((chat) => {
+      if (chat.partner_oc?.id && chat.partner_oc?.user_id) {
+        map.set(chat.partner_oc.id, chat.partner_oc.user_id);
+      }
+    });
+    return map;
+  }, [chats]);
+
+  const isOnline = useMessagePresence(
+    user && !("is_guest" in user) ? user.id : null,
+    ocIdToUserId
+  );
 
   useEffect(() => {
     if (isGuest || !user || "is_guest" in user) return;
@@ -77,7 +93,12 @@ export function ChatSidebar() {
         ) : (
           <div className="flex flex-col gap-1 p-2">
             {chats.map((chat) => (
-              <ChatCard key={chat.id} chat={chat} collapsed={collapsed} />
+              <ChatCard
+                key={chat.id}
+                chat={chat}
+                collapsed={collapsed}
+                isOnline={isOnline(chat.partner_oc?.user_id || "")}
+              />
             ))}
           </div>
         )}
@@ -87,23 +108,21 @@ export function ChatSidebar() {
         <div className="p-3">
           <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl shadow-[0_0_20px_rgba(255,45,123,0.08)]">
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Coffee className="size-4" />
+              <Heart className="size-4" />
               <p className="text-xs font-medium">Enjoying Unhinged?</p>
             </div>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground/80">
               Support the app to keep it running and growing.
             </p>
-            <a
-              href="https://ko-fi.com/unhinged"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/support"
               className="mt-3 inline-flex w-full"
             >
               <Button variant="outline" size="sm" className="w-full gap-2">
-                <ExternalLink className="size-3.5" />
-                Support on Ko-Fi
+                <Heart className="size-3.5" />
+                Support Unhinged
               </Button>
-            </a>
+            </Link>
           </div>
         </div>
       )}
@@ -111,7 +130,7 @@ export function ChatSidebar() {
   );
 }
 
-function ChatCard({ chat, collapsed }: { chat: DashboardChat; collapsed: boolean }) {
+function ChatCard({ chat, collapsed, isOnline }: { chat: DashboardChat; collapsed: boolean; isOnline: boolean }) {
   const partner = chat.partner_oc;
   const myOc = chat.my_oc;
   const partnerImage = getPublicImageUrl(partner?.image_url);
@@ -126,12 +145,14 @@ function ChatCard({ chat, collapsed }: { chat: DashboardChat; collapsed: boolean
       )}
     >
       <div className="relative shrink-0">
-        <Avatar className="size-11 border border-white/10">
-          <AvatarImage src={partnerImage} alt={partner?.name || "Partner OC"} />
-          <AvatarFallback className="text-xs font-bold">
-            {getInitials(partner?.name || "?")}
-          </AvatarFallback>
-        </Avatar>
+        <Link href={`/oc/${partner?.id}?from=dashboard`} onClick={(e) => e.stopPropagation()}>
+          <Avatar className="size-11 border border-white/10 transition-all duration-200 hover:ring-2 hover:ring-primary/50">
+            <AvatarImage src={partnerImage} alt={partner?.name || "Partner OC"} />
+            <AvatarFallback className="text-xs font-bold">
+              {getInitials(partner?.name || "?")}
+            </AvatarFallback>
+          </Avatar>
+        </Link>
         {!collapsed && (
           <Avatar className="absolute -right-1 -bottom-1 size-5 ring-2 ring-zinc-950">
             <AvatarImage src={myImage} alt={myOc?.name || "My OC"} />
@@ -143,9 +164,9 @@ function ChatCard({ chat, collapsed }: { chat: DashboardChat; collapsed: boolean
         <span
           className={cn(
             "absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-zinc-950",
-            chat.is_online ? "bg-green-500" : "bg-muted-foreground"
+            isOnline ? "bg-green-500" : "bg-muted-foreground"
           )}
-          aria-label={chat.is_online ? "Online" : "Offline"}
+          aria-label={isOnline ? "Online" : "Offline"}
         />
       </div>
 

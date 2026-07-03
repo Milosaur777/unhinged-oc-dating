@@ -5,8 +5,6 @@ import Image from "next/image";
 import {
   ArrowLeft,
   Heart,
-  Coffee,
-  Sparkles,
   Shield,
   Rocket,
   Gift,
@@ -14,36 +12,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
-
-const tiers = [
-  {
-    name: "Coffee",
-    amount: "$3",
-    icon: Coffee,
-    description: "Buy me a coffee. Every bit helps keep the servers running.",
-    color: "text-amber-400",
-    bg: "bg-amber-400/10",
-    border: "border-amber-400/20",
-  },
-  {
-    name: "Supporter",
-    amount: "$5",
-    icon: Heart,
-    description: "Show some love. Funds go toward hosting and new features.",
-    color: "text-primary",
-    bg: "bg-primary/10",
-    border: "border-primary/20",
-  },
-  {
-    name: "Champion",
-    amount: "$10",
-    icon: Sparkles,
-    description: "You're awesome. Help accelerate development and priority features.",
-    color: "text-purple-400",
-    bg: "bg-purple-400/10",
-    border: "border-purple-400/20",
-  },
-];
 
 const useCases = [
   {
@@ -97,7 +65,7 @@ export default function SupportPage() {
             <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
               Unhinged is built by a solo developer. Your support directly funds
               server costs, new features, and community rewards. No paywalls,
-              no locked content — just optional support to keep the project
+              no locked content, just optional support to keep the project
               alive.
             </p>
 
@@ -116,45 +84,31 @@ export default function SupportPage() {
               ))}
             </div>
 
-            <div className="flex flex-col gap-3">
-              {tiers.map((tier) => (
-                <a
-                  key={tier.name}
-                  href="https://ko-fi.com/unhinged"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group"
-                >
-                  <div
-                    className={`flex items-center gap-4 rounded-xl border ${tier.border} ${tier.bg} p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg`}
-                  >
-                    <div
-                      className={`flex size-12 shrink-0 items-center justify-center rounded-xl ${tier.bg}`}
-                    >
-                      <tier.icon className={`size-6 ${tier.color}`} />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{tier.name}</h3>
-                        <span className={`text-sm font-bold ${tier.color}`}>
-                          {tier.amount}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {tier.description}
-                      </p>
-                    </div>
-                    <ExternalLink className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
-                  </div>
-                </a>
-              ))}
-            </div>
+            <a
+              href="https://ko-fi.com/multimilo"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group mb-6 block"
+            >
+              <div className="flex items-center gap-4 rounded-xl border border-primary/20 bg-primary/10 p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                  <Heart className="size-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold">Support on Ko-Fi</h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Buy me a coffee or become a monthly supporter.
+                  </p>
+                </div>
+                <ExternalLink className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+              </div>
+            </a>
 
             <div className="mt-6 rounded-xl border border-white/5 bg-white/[0.02] p-4 text-center">
               <p className="text-xs text-muted-foreground">
                 Payments are processed securely through{" "}
                 <a
-                  href="https://ko-fi.com/unhinged"
+                  href="https://ko-fi.com/multimilo"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary underline-offset-2 hover:underline"

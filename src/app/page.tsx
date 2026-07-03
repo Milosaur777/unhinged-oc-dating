@@ -41,8 +41,10 @@ import {
   getProfile,
   getIncomingLikes,
   getChatSessions,
+  getProfileViewCount,
   OCWithDetails,
   Profile,
+  OC,
 } from "@/lib/supabase-queries";
 import { getPublicImageUrl, cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -103,7 +105,7 @@ export default function DashboardPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [tagFilter, setTagFilter] = useState<string>("all");
-  const [stats, setStats] = useState({ totalLikes: 0, matches: 0 });
+  const [stats, setStats] = useState({ totalLikes: 0, matches: 0, views: 0 });
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -131,7 +133,7 @@ export default function DashboardPage() {
         const [profileData, data] = await Promise.all([
           getProfile(user!.id),
           getUserOCs(user!.id),
-        ]);
+        ]) as [Profile | null, OC[]];
         setProfile(profileData);
         const detailed = await Promise.all(
           data.map(async (oc) => {
@@ -142,11 +144,12 @@ export default function DashboardPage() {
         setOcs(detailed.filter(Boolean) as OCWithDetails[]);
 
         const ids = data.map((o) => o.id);
-        const [likes, sessions] = await Promise.all([
+        const [likes, sessions, views] = await Promise.all([
           ids.length > 0 ? getIncomingLikes(ids) : Promise.resolve([]),
           ids.length > 0 ? getChatSessions(user!.id) : Promise.resolve([]),
+          getProfileViewCount(user!.id),
         ]);
-        setStats({ totalLikes: likes.length, matches: sessions.length });
+        setStats({ totalLikes: likes.length, matches: sessions.length, views });
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Failed to load OCs");
       } finally {
@@ -385,10 +388,10 @@ export default function DashboardPage() {
               <div>
                 <h1 className="inline-flex items-center gap-2 text-4xl font-extrabold lg:text-5xl">
                   <span className="bg-gradient-to-r from-primary via-pink-400 to-purple-400 bg-clip-text text-transparent">
-                    Your RP Characters
+                    Your Role-playing Characters
                   </span>
                 </h1>
-                <p className="text-sm text-muted-foreground/80">
+                <p className="text-base text-muted-foreground/80">
                   {isGuest
                     ? "Guest mode — your characters are stored locally."
                     : "Manage, reorder, and preview your characters."}
@@ -411,7 +414,7 @@ export default function DashboardPage() {
                     value={isGuest ? 0 : stats.matches}
                     variant="blue"
                   />
-                  <StatCard icon={Eye} label="Views" value={0} variant="purple" />
+                   <StatCard icon={Eye} label="Views" value={isGuest ? 0 : stats.views} variant="purple" />
                 </div>
               </div>
             </div>

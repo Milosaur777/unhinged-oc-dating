@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -55,7 +56,7 @@ const SPECIES = [
   "Werewolf",
   "Vampire",
   "Fae",
-  "Neko",
+  "Dwarf",
   "Dragonkin",
   "Alien",
   "Ghost",
@@ -157,6 +158,7 @@ interface FormState {
   fieldVisibility: Record<string, boolean>;
   skippedFields: Record<string, boolean>;
   badges: BadgeOption[];
+  isHidden: boolean;
 }
 
 const DEFAULT_VISIBILITY: Record<string, boolean> = {
@@ -267,6 +269,7 @@ function CreateOCForm() {
     fieldVisibility: { ...DEFAULT_VISIBILITY },
     skippedFields: { ...DEFAULT_SKIPPED },
     badges: [],
+    isHidden: false,
   });
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -344,6 +347,7 @@ function CreateOCForm() {
         { ...DEFAULT_SKIPPED }
       ),
       badges: [],
+      isHidden: oc.is_hidden ?? false,
     });
   }
 
@@ -386,6 +390,7 @@ function CreateOCForm() {
       fieldVisibility: { ...DEFAULT_VISIBILITY },
       skippedFields: { ...DEFAULT_SKIPPED },
       badges: [],
+      isHidden: false,
     });
   }
 
@@ -707,6 +712,7 @@ function CreateOCForm() {
         images: galleryPaths.length ? galleryPaths : null,
         is_swipable: true,
         is_premade: false,
+        is_hidden: form.isHidden,
       };
 
       const feedData: Omit<TablesInsert<"oc_open_feed">, "id" | "oc_id"> = {
@@ -918,6 +924,17 @@ function CreateOCForm() {
                     <span className="min-w-[110px] text-right text-sm font-medium">{heightDisplay}</span>
                   </div>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.02] p-3">
+                <div className="flex flex-col gap-0.5">
+                  <Label className="text-sm font-medium">Hide from swiping</Label>
+                  <p className="text-xs text-muted-foreground">This character won&apos;t appear in the swipe stack for others.</p>
+                </div>
+                <Switch
+                  checked={form.isHidden}
+                  onCheckedChange={(checked) => update("isHidden", checked)}
+                />
               </div>
             </div>
           )}
