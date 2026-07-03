@@ -72,7 +72,7 @@ const MOBILE_OFFSETS: Record<string, number> = {
   "/headers/Alchemist.avif": 70,
   "/headers/Beach.avif": 70,
   "/headers/Bedroom.avif": 95,
-  "/headers/Cantina.avif": 75,
+  "/headers/Lounge.avif": 75,
   "/headers/Church.avif": 65,
   "/headers/Dungeon.avif": 85,
   "/headers/Forest.avif": 90,
