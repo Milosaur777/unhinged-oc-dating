@@ -415,21 +415,30 @@ export async function getPublicOCs(
 export async function createChatSession(
   oc1Id: string,
   oc2Id: string,
+  oc1UserId: string,
   oc2UserId: string,
+  oc1UserName: string | null,
   oc2UserName: string | null,
+  oc1Name: string | null,
   oc2Name: string | null
 ): Promise<ChatSession> {
   const supabase = getClient();
   const [firstId, secondId] = oc1Id < oc2Id ? [oc1Id, oc2Id] : [oc2Id, oc1Id];
+  // After sorting, figure out which user data belongs to oc2_id
+  const secondIsOc1 = secondId === oc1Id;
+  const oc2UserIdFinal = secondIsOc1 ? oc1UserId : oc2UserId;
+  const oc2UserNameFinal = secondIsOc1 ? oc1UserName : oc2UserName;
+  const oc2NameFinal = secondIsOc1 ? oc1Name : oc2Name;
+
   const { data, error } = await supabase
     .from("chat_sessions")
     .upsert(
       {
         oc1_id: firstId,
         oc2_id: secondId,
-        oc2_user_id: oc2UserId,
-        oc2_user_name: oc2UserName,
-        oc2_name: oc2Name,
+        oc2_user_id: oc2UserIdFinal,
+        oc2_user_name: oc2UserNameFinal,
+        oc2_name: oc2NameFinal,
       },
       { onConflict: "oc1_id,oc2_id" }
     )

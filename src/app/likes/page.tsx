@@ -62,6 +62,7 @@ export default function LikesPage() {
 
       // We already know they liked us (this is an incoming like),
       // so create the chat session directly without checking.
+      const myUserId = like.target_oc?.user_id || user?.id || "";
       const theirUserId = like.liker_oc?.user_id || await (await import("@/lib/supabase-queries")).getOCUserId(like.from_oc_id) || "";
       if (!theirUserId) {
         console.error("Cannot create chat session: missing user_id for OC", like.from_oc_id);
@@ -72,8 +73,11 @@ export default function LikesPage() {
       const session = await createChatSession(
         like.to_oc_id,
         like.from_oc_id,
+        myUserId,
         theirUserId,
         null,
+        null,
+        like.target_oc?.name || null,
         like.liker_oc?.name || null
       );
 

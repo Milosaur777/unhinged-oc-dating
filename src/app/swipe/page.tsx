@@ -181,8 +181,11 @@ export default function SwipePage() {
               const session = await createChatSession(
                 selectedOcId,
                 current.id,
+                user!.id,
                 current.user_id,
                 null,
+                null,
+                myOc?.name || null,
                 current.name
               );
               setMatchedOc({ name: current.name, image_url: current.image_url, id: current.id });
