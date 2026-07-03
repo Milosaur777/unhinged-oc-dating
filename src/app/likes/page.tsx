@@ -59,18 +59,38 @@ export default function LikesPage() {
   async function handleLikeBack(like: IncomingLike) {
     try {
       await recordSwipe(like.to_oc_id, like.from_oc_id, "like");
-      const mutual = await (await import("@/lib/supabase-queries")).checkMutualLike(like.to_oc_id, like.from_oc_id);
-      if (mutual) {
-        const session = await createChatSession(like.to_oc_id, like.from_oc_id, like.liker_oc?.user_id || "", null, like.liker_oc?.name || null);
-        setMatchedOc({ name: like.liker_oc?.name || "Unknown", image_url: like.liker_oc?.image_url || null, id: like.from_oc_id });
-        setMyOcForMatch({ name: like.target_oc?.name || "Unknown", image_url: like.target_oc?.image_url || null });
-        setMatchedChatId(session.id);
-        setMatchModalOpen(true);
-      } else {
-        toast.success(`Liked ${like.liker_oc?.name} back!`);
+
+      // We already know they liked us (this is an incoming like),
+      // so create the chat session directly without checking.
+      const theirUserId = like.liker_oc?.user_id || await (await import("@/lib/supabase-queries")).getOCUserId(like.from_oc_id) || "";
+      if (!theirUserId) {
+        console.error("Cannot create chat session: missing user_id for OC", like.from_oc_id);
+        toast.error("Failed to match: missing creator info");
+        return;
       }
+
+      const session = await createChatSession(
+        like.to_oc_id,
+        like.from_oc_id,
+        theirUserId,
+        null,
+        like.liker_oc?.name || null
+      );
+
+      setMatchedOc({
+        name: like.liker_oc?.name || "Unknown",
+        image_url: like.liker_oc?.image_url || null,
+        id: like.from_oc_id,
+      });
+      setMyOcForMatch({
+        name: like.target_oc?.name || "Unknown",
+        image_url: like.target_oc?.image_url || null,
+      });
+      setMatchedChatId(session.id);
+      setMatchModalOpen(true);
       setLikes((prev) => prev.filter((l) => l.id !== like.id));
     } catch (err) {
+      console.error("handleLikeBack error:", err);
       toast.error(err instanceof Error ? err.message : "Failed to match");
     }
   }

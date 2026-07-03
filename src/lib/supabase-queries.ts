@@ -138,6 +138,20 @@ export async function getOCById(ocId: string): Promise<OC | null> {
   return data;
 }
 
+export async function getOCUserId(ocId: string): Promise<string | null> {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from("ocs")
+    .select("user_id")
+    .eq("id", ocId)
+    .single();
+  if (error && error.code !== "PGRST116") {
+    console.error("getOCUserId error:", error);
+    return null;
+  }
+  return data?.user_id ?? null;
+}
+
 export async function getOCWithDetails(ocId: string): Promise<OCWithDetails | null> {
   const supabase = getClient();
   const { data, error } = await supabase
@@ -277,12 +291,16 @@ export async function checkMutualLike(fromOcId: string, toOcId: string): Promise
   const supabase = getClient();
   const { data, error } = await supabase
     .from("swipe_actions")
-    .select("*")
+    .select("id")
     .eq("from_oc_id", toOcId)
     .eq("to_oc_id", fromOcId)
     .eq("action", "like")
-    .single();
-  if (error && error.code !== "PGRST116") throw error;
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    console.error("checkMutualLike error:", error);
+    throw error;
+  }
   return !!data;
 }
 

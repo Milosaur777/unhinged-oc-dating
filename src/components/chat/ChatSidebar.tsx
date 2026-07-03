@@ -9,30 +9,16 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { getDashboardChats, DashboardChat } from "@/lib/supabase-queries";
-import { useMessagePresence } from "@/lib/useMessagePresence";
+import { usePresence } from "@/lib/usePresence";
 import { getPublicImageUrl, getInitials, cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export function ChatSidebar() {
   const { user, isGuest } = useAuth();
+  const onlineUserIds = usePresence(user && !("is_guest" in user) ? user.id : null);
   const [collapsed, setCollapsed] = useState(false);
   const [chats, setChats] = useState<DashboardChat[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const ocIdToUserId = useMemo(() => {
-    const map = new Map<string, string>();
-    chats.forEach((chat) => {
-      if (chat.partner_oc?.id && chat.partner_oc?.user_id) {
-        map.set(chat.partner_oc.id, chat.partner_oc.user_id);
-      }
-    });
-    return map;
-  }, [chats]);
-
-  const isOnline = useMessagePresence(
-    user && !("is_guest" in user) ? user.id : null,
-    ocIdToUserId
-  );
 
   useEffect(() => {
     if (isGuest || !user || "is_guest" in user) return;
@@ -97,7 +83,7 @@ export function ChatSidebar() {
                 key={chat.id}
                 chat={chat}
                 collapsed={collapsed}
-                isOnline={isOnline(chat.partner_oc?.user_id || "")}
+                isOnline={onlineUserIds.has(chat.partner_oc?.user_id || "")}
               />
             ))}
           </div>

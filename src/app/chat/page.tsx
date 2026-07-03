@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { getChatSessions, deleteChatSession, ChatSessionWithOCs } from "@/lib/supabase-queries";
-import { useMessagePresence } from "@/lib/useMessagePresence";
+import { usePresence } from "@/lib/usePresence";
 import { getPublicImageUrl, getInitials, cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -45,27 +45,12 @@ function formatRelativeTime(dateStr: string): string {
 export default function ChatListPage() {
   const router = useRouter();
   const { user, isGuest, loading } = useAuth();
+  const onlineUserIds = usePresence(user && !("is_guest" in user) ? user.id : null);
   const [sessions, setSessions] = useState<ChatSessionWithOCs[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<ChatSessionWithOCs | null>(null);
   const [confirmName, setConfirmName] = useState("");
   const [query, setQuery] = useState("");
-
-  const ocIdToUserId = useMemo(() => {
-    const map = new Map<string, string>();
-    sessions.forEach((session) => {
-      const theirOC = session.oc1?.user_id === user?.id ? session.oc2 : session.oc1;
-      if (theirOC?.id && theirOC?.user_id) {
-        map.set(theirOC.id, theirOC.user_id);
-      }
-    });
-    return map;
-  }, [sessions, user?.id]);
-
-  const isOnline = useMessagePresence(
-    user && !("is_guest" in user) ? user.id : null,
-    ocIdToUserId
-  );
 
   useEffect(() => {
     if (loading) return;
@@ -199,7 +184,7 @@ export default function ChatListPage() {
               const lastMessage = (session as unknown as Record<string, unknown>).last_message as string | undefined;
               const lastActive = (session as unknown as Record<string, unknown>).last_active_at as string | undefined;
               const theirUserId = session.oc1?.user_id === user?.id ? session.oc2?.user_id : session.oc1?.user_id;
-              const isPartnerOnline = theirUserId ? isOnline(theirUserId) : false;
+              const isPartnerOnline = theirUserId ? onlineUserIds.has(theirUserId) : false;
 
               return (
                 <div

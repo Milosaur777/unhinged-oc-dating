@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import { getChatMessages, sendChatMessage, getProfile, ChatMessage, OC } from "@/lib/supabase-queries";
-import { useMessagePresence } from "@/lib/useMessagePresence";
+import { usePresence } from "@/lib/usePresence";
 import { getPublicImageUrl, getInitials, cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createClient } from "@/lib/supabase";
@@ -133,19 +133,8 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
     ? (myOcId === rawOc1?.id ? rawOc1 : (rawOc2 ?? rawOc1))
     : rawOc1;
   const partnerUserId = myOC.id === rawOc1?.id ? rawOc2?.user_id : rawOc1?.user_id;
-  const partnerOcId = myOC.id === rawOc1?.id ? rawOc2?.id : rawOc1?.id;
-  const ocIdToUserId = useMemo(() => {
-    const map = new Map<string, string>();
-    if (partnerOcId && partnerUserId) {
-      map.set(partnerOcId, partnerUserId);
-    }
-    return map;
-  }, [partnerOcId, partnerUserId]);
-  const isOnline = useMessagePresence(
-    user && !("is_guest" in user) ? user.id : null,
-    ocIdToUserId
-  );
-  const isPartnerOnline = partnerUserId ? isOnline(partnerUserId) : false;
+  const onlineUserIds = usePresence(user && !("is_guest" in user) ? user.id : null);
+  const isPartnerOnline = partnerUserId ? onlineUserIds.has(partnerUserId) : false;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);

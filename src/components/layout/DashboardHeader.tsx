@@ -212,7 +212,7 @@ export function DashboardHeader() {
                   <Link
                     href={link.href}
                     className={cn(
-                      "relative flex items-center justify-center overflow-hidden rounded-full p-0.5 text-muted-foreground transition-all duration-200 hover:text-foreground",
+                      "relative flex items-center justify-center overflow-hidden rounded-full p-1 text-muted-foreground transition-all duration-200 hover:text-foreground",
                       isActive
                         ? "bg-white/10 text-foreground active-glow"
                         : "hover:bg-white/5"
@@ -221,7 +221,7 @@ export function DashboardHeader() {
                     {isActive && (
                       <span className="pointer-events-none absolute inset-0 animate-light-beam bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
                     )}
-                    <link.icon className="relative z-10 size-8" />
+                    <link.icon className="relative z-10 size-7" />
                   </Link>
                   {link.href === "/likes" && likesCount > 0 && (
                     <span className="absolute -top-0.5 right-0 z-30 flex min-w-[16px] items-center justify-center rounded-full bg-primary px-0.5 text-[8px] font-bold text-primary-foreground shadow-[0_0_6px_rgba(255,45,123,0.6)]">
@@ -238,9 +238,9 @@ export function DashboardHeader() {
               <DropdownMenuTrigger
                 render={
                   <button className="flex items-center gap-0.5 rounded-full p-0.5 transition-opacity hover:opacity-80">
-                    <Avatar className="size-11">
+                    <Avatar className="size-10">
                       <AvatarImage src={getPublicImageUrl(creatorAvatarUrl)} alt={creatorName || "Creator"} />
-                      <AvatarFallback className="text-sm">
+                      <AvatarFallback className="text-xs">
                         {creatorName ? getInitials(creatorName) : <User className="size-5" />}
                       </AvatarFallback>
                     </Avatar>

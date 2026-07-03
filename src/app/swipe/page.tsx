@@ -34,12 +34,12 @@ interface SwipeState {
 
 function getSwipeThreshold() {
   if (typeof window === "undefined") return 100;
-  return window.innerWidth >= 768 ? 120 : 100;
+  return window.innerWidth >= 768 ? 120 : 140;
 }
 
 function getVelocityThreshold() {
   if (typeof window === "undefined") return 500;
-  return window.innerWidth >= 768 ? 500 : 500;
+  return window.innerWidth >= 768 ? 500 : 600;
 }
 
 function getField(oc: OCWithDetails, key: string): string | null {
@@ -172,25 +172,36 @@ export default function SwipePage() {
 
     const myOc = myOCs.find((o) => o.id === selectedOcId);
 
-    recordSwipe(selectedOcId, current.id, action).then(async () => {
-      if (action === "like") {
-        const mutual = await checkMutualLike(selectedOcId, current.id);
-        if (mutual) {
-          const session = await createChatSession(
-            selectedOcId,
-            current.id,
-            current.user_id,
-            null,
-            current.name
-          );
-          setMatchedOc({ name: current.name, image_url: current.image_url, id: current.id });
-          setMyOcForMatch(myOc ? { name: myOc.name, image_url: myOc.image_url } : null);
-          setMatchedChatId(session.id);
-          setMatchModalOpen(true);
+    recordSwipe(selectedOcId, current.id, action)
+      .then(async () => {
+        if (action === "like") {
+          try {
+            const mutual = await checkMutualLike(selectedOcId, current.id);
+            if (mutual) {
+              const session = await createChatSession(
+                selectedOcId,
+                current.id,
+                current.user_id,
+                null,
+                current.name
+              );
+              setMatchedOc({ name: current.name, image_url: current.image_url, id: current.id });
+              setMyOcForMatch(myOc ? { name: myOc.name, image_url: myOc.image_url } : null);
+              setMatchedChatId(session.id);
+              setMatchModalOpen(true);
+            }
+          } catch (err) {
+            console.error("Match check failed:", err);
+            // Still advance the card even if match detection fails
+          }
         }
-      }
-      setCurrentIndex((i) => i + 1);
-    });
+        setCurrentIndex((i) => i + 1);
+      })
+      .catch((err) => {
+        console.error("recordSwipe failed:", err);
+        toast.error(err instanceof Error ? err.message : "Failed to record swipe");
+        setCurrentIndex((i) => i + 1);
+      });
   }
 
   if (loading) {
@@ -416,8 +427,18 @@ function SwipeCard({ oc, onResult, suppressTapRef, selectedOcId, currentIndex }:
       return;
     }
 
-    const shouldFlyOut =
-      Math.abs(info.offset.x) > getSwipeThreshold() || Math.abs(info.velocity.x) > getVelocityThreshold();
+    const threshold = getSwipeThreshold();
+    const velocityThreshold = getVelocityThreshold();
+    const offset = Math.abs(info.offset.x);
+    const velocity = Math.abs(info.velocity.x);
+
+    // Fast flick: normal threshold
+    // Slow drag: need to go 2x as far to commit
+    const isFlick = velocity > velocityThreshold;
+    const isDeepDrag = offset > threshold * 1.8;
+    const isModerateDragWithSpeed = offset > threshold && velocity > velocityThreshold * 0.25;
+
+    const shouldFlyOut = isFlick || isDeepDrag || isModerateDragWithSpeed;
 
     if (shouldFlyOut) {
       suppressTapRef.current = true;
