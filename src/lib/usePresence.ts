@@ -1,68 +1,72 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "./supabase";
-
-const PRESENCE_CHANNEL = "global-presence-v2";
-const HEARTBEAT_INTERVAL = 30000; // 30 seconds
-const OFFLINE_THRESHOLD = 70000; // 70 seconds
 
 export function usePresence(userId: string | null) {
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
-  const lastSeenRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     if (!userId) return;
 
     const supabase = createClient();
-    const channel = supabase.channel(PRESENCE_CHANNEL);
+    const channel = supabase.channel("online-users", {
+      config: {
+        presence: {
+          key: userId,
+        },
+      },
+    });
 
     channel
-      .on(
-        "broadcast",
-        { event: "heartbeat" },
-        (payload) => {
-          const { user_id } = payload.payload as { user_id: string };
-          if (!user_id || user_id === userId) return;
-          lastSeenRef.current.set(user_id, Date.now());
-          setOnlineUserIds(new Set(lastSeenRef.current.keys()));
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState();
+        const ids = new Set<string>();
+        for (const key of Object.keys(state)) {
+          const presences = state[key] as Array<{ user_id?: string }>;
+          for (const p of presences) {
+            if (p.user_id && p.user_id !== userId) {
+              ids.add(p.user_id);
+            }
+          }
         }
-      )
-      .subscribe((status) => {
+        setOnlineUserIds(ids);
+      })
+      .on("presence", { event: "join" }, ({ newPresences }) => {
+        setOnlineUserIds((prev) => {
+          const next = new Set(prev);
+          for (const p of newPresences as Array<{ user_id?: string }>) {
+            if (p.user_id && p.user_id !== userId) {
+              next.add(p.user_id);
+            }
+          }
+          return next;
+        });
+      })
+      .on("presence", { event: "leave" }, ({ leftPresences }) => {
+        setOnlineUserIds((prev) => {
+          const next = new Set(prev);
+          for (const p of leftPresences as Array<{ user_id?: string }>) {
+            if (p.user_id) {
+              next.delete(p.user_id);
+            }
+          }
+          return next;
+        });
+      })
+      .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
-          channel.send({
-            type: "broadcast",
-            event: "heartbeat",
-            payload: { user_id: userId },
-          });
+          await channel.track({ user_id: userId, online_at: Date.now() });
         }
       });
 
+    // Re-track every 20s to keep presence alive
     const heartbeat = setInterval(() => {
-      channel.send({
-        type: "broadcast",
-        event: "heartbeat",
-        payload: { user_id: userId },
-      });
-    }, HEARTBEAT_INTERVAL);
-
-    const cleanup = setInterval(() => {
-      const now = Date.now();
-      let changed = false;
-      for (const [uid, time] of lastSeenRef.current.entries()) {
-        if (now - time > OFFLINE_THRESHOLD) {
-          lastSeenRef.current.delete(uid);
-          changed = true;
-        }
-      }
-      if (changed) {
-        setOnlineUserIds(new Set(lastSeenRef.current.keys()));
-      }
-    }, 10000);
+      channel.track({ user_id: userId, online_at: Date.now() });
+    }, 20000);
 
     return () => {
       clearInterval(heartbeat);
-      clearInterval(cleanup);
       supabase.removeChannel(channel);
     };
   }, [userId]);

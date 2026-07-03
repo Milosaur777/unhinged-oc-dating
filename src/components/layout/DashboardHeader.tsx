@@ -221,7 +221,7 @@ export function DashboardHeader() {
                     {isActive && (
                       <span className="pointer-events-none absolute inset-0 animate-light-beam bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
                     )}
-                    <link.icon className="relative z-10 size-7" />
+                    <link.icon className="relative z-10 size-6" />
                   </Link>
                   {link.href === "/likes" && likesCount > 0 && (
                     <span className="absolute -top-0.5 right-0 z-30 flex min-w-[16px] items-center justify-center rounded-full bg-primary px-0.5 text-[8px] font-bold text-primary-foreground shadow-[0_0_6px_rgba(255,45,123,0.6)]">
