@@ -394,7 +394,7 @@ export default function DashboardPage() {
                 <p className="text-base text-muted-foreground/80">
                   {isGuest
                     ? "Guest mode — your characters are stored locally."
-                    : "Manage, reorder, and preview your characters."}
+                    : "Create and manage your characters."}
                 </p>
               </div>
 
