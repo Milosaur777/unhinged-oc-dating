@@ -65,13 +65,12 @@ export function CreatorProfileView({ profile, ocs }: CreatorProfileViewProps) {
               <Image src={avatarUrl} alt={profile.creator_name || "Creator"} fill className="object-cover" sizes="144px" />
             ) : (
                 <div className="flex size-full items-center justify-center bg-zinc-800 text-3xl font-bold text-muted-foreground">
-                {getInitials(profile.creator_name || profile.username || "?")}
+                {getInitials(profile.creator_name || "?")}
               </div>
             )}
           </div>
           <div className="flex flex-col items-center gap-1 text-center md:items-start md:text-left">
-            <h1 className="text-2xl font-bold">{profile.creator_name || profile.username || "Anonymous Creator"}</h1>
-            {profile.username && <p className="text-sm text-muted-foreground">@{profile.username}</p>}
+            <h1 className="text-2xl font-bold">{profile.creator_name || "Anonymous Creator"}</h1>
           </div>
         </div>
 
