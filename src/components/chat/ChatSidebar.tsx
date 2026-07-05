@@ -15,7 +15,7 @@ import { toast } from "sonner";
 
 export function ChatSidebar() {
   const { user, isGuest } = useAuth();
-  const onlineUserIds = usePresence(user && !("is_guest" in user) ? user.id : null);
+  const presenceMap = usePresence(user && !("is_guest" in user) ? user.id : null);
   const [collapsed, setCollapsed] = useState(false);
   const [chats, setChats] = useState<DashboardChat[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,14 +78,17 @@ export function ChatSidebar() {
           </div>
         ) : (
           <div className="flex flex-col gap-1 p-2">
-            {chats.map((chat) => (
-              <ChatCard
-                key={chat.id}
-                chat={chat}
-                collapsed={collapsed}
-                isOnline={onlineUserIds.has(chat.partner_oc?.user_id || "")}
-              />
-            ))}
+            {chats.map((chat) => {
+              const status = presenceMap.get(chat.partner_oc?.user_id || "");
+              return (
+                <ChatCard
+                  key={chat.id}
+                  chat={chat}
+                  collapsed={collapsed}
+                  status={status}
+                />
+              );
+            })}
           </div>
         )}
       </ScrollArea>
@@ -116,11 +119,23 @@ export function ChatSidebar() {
   );
 }
 
-function ChatCard({ chat, collapsed, isOnline }: { chat: DashboardChat; collapsed: boolean; isOnline: boolean }) {
+function ChatCard({ chat, collapsed, status }: { chat: DashboardChat; collapsed: boolean; status?: string }) {
   const partner = chat.partner_oc;
   const myOc = chat.my_oc;
   const partnerImage = getPublicImageUrl(partner?.image_url);
   const myImage = getPublicImageUrl(myOc?.image_url);
+
+  const statusColor =
+    status === "online" ? "bg-green-500" :
+    status === "idle" ? "bg-yellow-500" :
+    status === "busy" ? "bg-red-500" :
+    "bg-muted-foreground";
+
+  const statusLabel =
+    status === "online" ? "Online" :
+    status === "idle" ? "Idle" :
+    status === "busy" ? "Busy" :
+    "Offline";
 
   return (
     <Link
@@ -150,9 +165,9 @@ function ChatCard({ chat, collapsed, isOnline }: { chat: DashboardChat; collapse
         <span
           className={cn(
             "absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-zinc-950",
-            isOnline ? "bg-green-500" : "bg-muted-foreground"
+            statusColor
           )}
-          aria-label={isOnline ? "Online" : "Offline"}
+          aria-label={statusLabel}
         />
       </div>
 

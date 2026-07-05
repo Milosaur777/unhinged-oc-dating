@@ -133,8 +133,9 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
     ? (myOcId === rawOc1?.id ? rawOc1 : (rawOc2 ?? rawOc1))
     : rawOc1;
   const partnerUserId = myOC.id === rawOc1?.id ? rawOc2?.user_id : rawOc1?.user_id;
-  const onlineUserIds = usePresence(user && !("is_guest" in user) ? user.id : null);
-  const isPartnerOnline = partnerUserId ? onlineUserIds.has(partnerUserId) : false;
+  const presenceMap = usePresence(user && !("is_guest" in user) ? user.id : null);
+  const partnerStatus = partnerUserId ? presenceMap.get(partnerUserId) : undefined;
+  const isPartnerOnline = partnerStatus === "online" || partnerStatus === "idle";
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
@@ -438,8 +439,12 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
             {myOC.name} ↔ {theirOC?.name || oc2Name || "Unknown"}
           </p>
           <p className="text-xs text-muted-foreground">
-            {isPartnerOnline ? (
-              <span className="text-green-500">● Online now</span>
+            {partnerStatus === "online" ? (
+              <span className="text-green-500">● Online</span>
+            ) : partnerStatus === "idle" ? (
+              <span className="text-yellow-500">● Idle</span>
+            ) : partnerStatus === "busy" ? (
+              <span className="text-red-500">● Busy</span>
             ) : (
               <span>● Offline</span>
             )}

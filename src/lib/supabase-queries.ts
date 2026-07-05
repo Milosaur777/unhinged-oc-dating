@@ -103,7 +103,14 @@ export async function upsertProfile(profile: TablesInsert<"profiles">) {
   return data;
 }
 
-export const updateProfile = upsertProfile;
+export async function updateProfileStatus(userId: string, status: string) {
+  const supabase = getClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ status })
+    .eq("id", userId);
+  if (error) throw error;
+}
 
 export async function clearProfileField(userId: string, field: "creator_header_url" | "creator_avatar_url") {
   const supabase = getClient();

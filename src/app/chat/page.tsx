@@ -45,7 +45,7 @@ function formatRelativeTime(dateStr: string): string {
 export default function ChatListPage() {
   const router = useRouter();
   const { user, isGuest, loading } = useAuth();
-  const onlineUserIds = usePresence(user && !("is_guest" in user) ? user.id : null);
+  const presenceMap = usePresence(user && !("is_guest" in user) ? user.id : null);
   const [sessions, setSessions] = useState<ChatSessionWithOCs[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<ChatSessionWithOCs | null>(null);
@@ -184,7 +184,12 @@ export default function ChatListPage() {
               const lastMessage = (session as unknown as Record<string, unknown>).last_message as string | undefined;
               const lastActive = (session as unknown as Record<string, unknown>).last_active_at as string | undefined;
               const theirUserId = session.oc1?.user_id === user?.id ? session.oc2?.user_id : session.oc1?.user_id;
-              const isPartnerOnline = theirUserId ? onlineUserIds.has(theirUserId) : false;
+              const theirStatus = theirUserId ? presenceMap.get(theirUserId) : undefined;
+              const statusColor =
+                theirStatus === "online" ? "bg-green-500" :
+                theirStatus === "idle" ? "bg-yellow-500" :
+                theirStatus === "busy" ? "bg-red-500" :
+                "bg-muted-foreground";
 
               return (
                 <div
@@ -216,7 +221,7 @@ export default function ChatListPage() {
                         <span
                           className={cn(
                             "absolute right-0 bottom-0 size-3.5 rounded-full border-2 border-background",
-                            isPartnerOnline ? "bg-green-500" : "bg-muted-foreground"
+                            statusColor
                           )}
                         />
                       </Link>

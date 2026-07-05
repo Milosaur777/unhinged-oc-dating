@@ -475,6 +475,7 @@ export type Database = {
           display_name: string | null
           id: string
           large_chat_text: boolean | null
+          status: string | null
           social_links_visible: Json | null
           updated_at: string | null
           username: string | null
@@ -505,6 +506,7 @@ export type Database = {
           display_name?: string | null
           id: string
           large_chat_text?: boolean | null
+          status?: string | null
           social_links_visible?: Json | null
           updated_at?: string | null
           username?: string | null
@@ -535,6 +537,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           large_chat_text?: boolean | null
+          status?: string | null
           social_links_visible?: Json | null
           updated_at?: string | null
           username?: string | null

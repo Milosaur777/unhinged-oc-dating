@@ -29,8 +29,8 @@ import {
 } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { getIncomingLikes, getProfile } from "@/lib/supabase-queries";
-import { cn, getPublicImageUrl, getInitials } from "@/lib/utils";
+import { getIncomingLikes, getProfile, updateProfileStatus } from "@/lib/supabase-queries";
+import { getPublicImageUrl, getInitials, cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { UpdatesModal } from "@/components/updates/UpdatesModal";
 
@@ -48,6 +48,7 @@ export function DashboardHeader() {
   const [likesCount, setLikesCount] = useState(0);
   const [creatorAvatarUrl, setCreatorAvatarUrl] = useState<string | null>(null);
   const [creatorName, setCreatorName] = useState<string>("");
+  const [userStatus, setUserStatus] = useState<string>("online");
 
   useEffect(() => {
     if (isGuest || !user || "is_guest" in user) return;
@@ -55,6 +56,7 @@ export function DashboardHeader() {
       .then((profile) => {
         setCreatorAvatarUrl(profile?.creator_avatar_url ?? null);
         setCreatorName(profile?.creator_name || profile?.display_name || user.email || "");
+        setUserStatus(profile?.status || "online");
       })
       .catch(() => {
         setCreatorAvatarUrl(null);
@@ -87,6 +89,16 @@ export function DashboardHeader() {
   async function handleLogout() {
     await logout();
     router.push("/");
+  }
+
+  async function handleSetStatus(status: string) {
+    if (!user || "is_guest" in user) return;
+    try {
+      await updateProfileStatus(user.id, status);
+      setUserStatus(status);
+    } catch {
+      toast.error("Failed to update status");
+    }
   }
 
   return (
@@ -166,7 +178,14 @@ export function DashboardHeader() {
                   </Button>
                 }
               />
-              <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuContent align="end" className="w-52">
+                <div className="grid grid-cols-2 gap-1 p-2">
+                  <StatusButton label="Online" color="bg-green-500" active={userStatus === "online"} onClick={() => handleSetStatus("online")} />
+                  <StatusButton label="Idle" color="bg-yellow-500" active={userStatus === "idle"} onClick={() => handleSetStatus("idle")} />
+                  <StatusButton label="Busy" color="bg-red-500" active={userStatus === "busy"} onClick={() => handleSetStatus("busy")} />
+                  <StatusButton label="Invisible" color="bg-muted-foreground" active={userStatus === "invisible"} onClick={() => handleSetStatus("invisible")} />
+                </div>
+                <div className="my-1 h-px bg-white/10" />
                 <DropdownMenuItem
                   render={
                     <Link href="/creator" className="cursor-pointer">
@@ -248,7 +267,14 @@ export function DashboardHeader() {
                   </button>
                 }
               />
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-52">
+                <div className="grid grid-cols-2 gap-1 p-2">
+                  <StatusButton label="Online" color="bg-green-500" active={userStatus === "online"} onClick={() => handleSetStatus("online")} />
+                  <StatusButton label="Idle" color="bg-yellow-500" active={userStatus === "idle"} onClick={() => handleSetStatus("idle")} />
+                  <StatusButton label="Busy" color="bg-red-500" active={userStatus === "busy"} onClick={() => handleSetStatus("busy")} />
+                  <StatusButton label="Invisible" color="bg-muted-foreground" active={userStatus === "invisible"} onClick={() => handleSetStatus("invisible")} />
+                </div>
+                <div className="my-1 h-px bg-white/10" />
                 <DropdownMenuItem
                   render={
                     <Link href="/creator" className="cursor-pointer">
@@ -281,5 +307,33 @@ export function DashboardHeader() {
         </div>
       </header>
     </>
+  );
+}
+
+function StatusButton({
+  label,
+  color,
+  active,
+  onClick,
+}: {
+  label: string;
+  color: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors",
+        active
+          ? "bg-white/10 text-foreground"
+          : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+      )}
+    >
+      <span className={cn("size-2.5 rounded-full", color)} />
+      <span>{label}</span>
+      {active && <span className="ml-auto size-1.5 rounded-full bg-primary" />}
+    </button>
   );
 }
