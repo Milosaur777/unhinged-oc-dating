@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
-import { getChatMessages, sendChatMessage, getProfile, ChatMessage, OC } from "@/lib/supabase-queries";
+import { getChatMessages, sendChatMessage, getProfile, getUserStatus, ChatMessage, OC } from "@/lib/supabase-queries";
 import { usePresence } from "@/lib/usePresence";
 import { getPublicImageUrl, getInitials, cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -134,7 +134,9 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
   const theirOC = myOC.id === rawOc1?.id ? rawOc2 : rawOc1;
   const partnerUserId = theirOC?.user_id;
   const presenceMap = usePresence(user && !("is_guest" in user) ? user.id : null);
-  const partnerStatus = partnerUserId ? presenceMap.get(partnerUserId) : undefined;
+  const realtimeStatus = partnerUserId ? presenceMap.get(partnerUserId) : undefined;
+  const [polledStatus, setPolledStatus] = useState<string | undefined>(undefined);
+  const partnerStatus = realtimeStatus ?? polledStatus;
   const isPartnerOnline = partnerStatus === "online" || partnerStatus === "idle";
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -176,6 +178,20 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
     load();
   }, [sessionId, user]);
 
+  // Fallback: poll partner status every 5 seconds
+  useEffect(() => {
+    if (!partnerUserId) return;
+    const poll = setInterval(async () => {
+      try {
+        const status = await getUserStatus(partnerUserId);
+        if (status) setPolledStatus(status);
+      } catch {
+        // Silently ignore
+      }
+    }, 5000);
+    return () => clearInterval(poll);
+  }, [partnerUserId]);
+
   useEffect(() => {
     if (!sessionId) return;
     const supabase = createClient();
@@ -198,13 +214,33 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
         }
       )
       .subscribe((status) => {
-        if (status === "CHANNEL_ERROR") {
-          console.error("Realtime subscription error for chat:", sessionId);
+        if (status === "CHANNEL_ERROR" || status === "CLOSED" || status === "TIMED_OUT") {
+          console.error("Realtime subscription failed for chat:", sessionId, "status:", status);
         }
       });
     return () => {
       supabase.removeChannel(channel);
     };
+  }, [sessionId]);
+
+  // Fallback: poll for new messages every 3 seconds
+  useEffect(() => {
+    if (!sessionId) return;
+    const poll = setInterval(async () => {
+      try {
+        const data = await getChatMessages(sessionId);
+        setMessages((prev) => {
+          if (data.length === prev.length) return prev;
+          const existingIds = new Set(prev.map((m) => m.id));
+          const newMessages = data.filter((m) => !existingIds.has(m.id));
+          if (newMessages.length === 0) return prev;
+          return [...prev, ...newMessages];
+        });
+      } catch {
+        // Silently ignore polling errors
+      }
+    }, 3000);
+    return () => clearInterval(poll);
   }, [sessionId]);
 
   useEffect(() => {

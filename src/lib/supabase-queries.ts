@@ -554,10 +554,10 @@ export async function sendChatMessage(
       text,
       image_url: imageUrl ?? null,
     })
-    .select()
-    .single();
+    .select();
   if (error) throw error;
-  return data;
+  if (!data || data.length === 0) throw new Error("Message was not saved");
+  return data[0];
 }
 
 export async function deleteChatSession(chatId: string) {
@@ -651,4 +651,15 @@ export async function getProfileViewCount(profileId: string): Promise<number> {
     .eq("profile_id", profileId);
   if (error) throw error;
   return count ?? 0;
+}
+
+export async function getUserStatus(userId: string): Promise<string | null> {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("status")
+    .eq("id", userId)
+    .single();
+  if (error) return null;
+  return data?.status ?? null;
 }

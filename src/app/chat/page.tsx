@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { getChatSessions, deleteChatSession, ChatSessionWithOCs } from "@/lib/supabase-queries";
+import { getChatSessions, deleteChatSession, getUserStatus, ChatSessionWithOCs } from "@/lib/supabase-queries";
 import { usePresence } from "@/lib/usePresence";
 import { getPublicImageUrl, getInitials, cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -46,6 +46,7 @@ export default function ChatListPage() {
   const router = useRouter();
   const { user, isGuest, loading } = useAuth();
   const presenceMap = usePresence(user && !("is_guest" in user) ? user.id : null);
+  const [polledStatuses, setPolledStatuses] = useState<Record<string, string>>({});
   const [sessions, setSessions] = useState<ChatSessionWithOCs[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<ChatSessionWithOCs | null>(null);
@@ -72,6 +73,29 @@ export default function ChatListPage() {
     }
     load();
   }, [user, isGuest, loading, router]);
+
+  // Fallback: poll partner statuses every 5 seconds
+  useEffect(() => {
+    if (!user || isGuest || sessions.length === 0) return;
+    const theirUserIds = sessions
+      .map((s) => (s.oc1?.user_id === user.id ? s.oc2?.user_id : s.oc1?.user_id))
+      .filter(Boolean) as string[];
+    if (theirUserIds.length === 0) return;
+
+    const poll = setInterval(async () => {
+      try {
+        const results: Record<string, string> = {};
+        for (const id of theirUserIds) {
+          const status = await getUserStatus(id);
+          if (status) results[id] = status;
+        }
+        setPolledStatuses(results);
+      } catch {
+        // Silently ignore
+      }
+    }, 5000);
+    return () => clearInterval(poll);
+  }, [user, isGuest, sessions]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -184,7 +208,8 @@ export default function ChatListPage() {
               const lastMessage = (session as unknown as Record<string, unknown>).last_message as string | undefined;
               const lastActive = (session as unknown as Record<string, unknown>).last_active_at as string | undefined;
               const theirUserId = session.oc1?.user_id === user?.id ? session.oc2?.user_id : session.oc1?.user_id;
-              const theirStatus = theirUserId ? presenceMap.get(theirUserId) : undefined;
+              const realtimeStatus = theirUserId ? presenceMap.get(theirUserId) : undefined;
+              const theirStatus = realtimeStatus ?? (theirUserId ? polledStatuses[theirUserId] : undefined);
               const statusColor =
                 theirStatus === "online" ? "bg-green-500" :
                 theirStatus === "idle" ? "bg-yellow-500" :
