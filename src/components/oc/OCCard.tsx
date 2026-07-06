@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Pencil, Trash2, MoreVertical } from "lucide-react";
+import { Pencil, Trash2, MoreVertical, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TagPillList } from "@/components/ui/TagPill";
@@ -13,6 +13,7 @@ import { cn, getPublicImageUrl, getInitials } from "@/lib/utils";
 interface OCCardProps {
   oc: OCWithDetails | GuestOC;
   onDelete?: () => void;
+  onToggleProfileVisibility?: () => void;
   draggable?: boolean;
   onDragStart?: (e: React.DragEvent) => void;
   onDragEnd?: (e: React.DragEvent) => void;
@@ -32,6 +33,7 @@ function getFieldValue(oc: OCWithDetails | GuestOC, key: string): string | null 
 export function OCCard({
   oc,
   onDelete,
+  onToggleProfileVisibility,
   draggable,
   onDragStart,
   onDragEnd,
@@ -44,6 +46,7 @@ export function OCCard({
   const gender = getFieldValue(oc, "gender");
   const age = getFieldValue(oc, "age");
   const isGuest = "is_guest" in oc === false && !("user_id" in oc);
+  const isHiddenFromProfile = "is_hidden_from_profile" in oc && oc.is_hidden_from_profile === true;
 
   if (view === "list") {
     return (
@@ -156,6 +159,24 @@ export function OCCard({
           <MoreVertical className="size-4" />
         </div>
       )}
+      {onToggleProfileVisibility && (
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleProfileVisibility();
+          }}
+          className="absolute top-2 left-2 z-20 rounded-md bg-black/50 p-1 backdrop-blur-sm transition-colors hover:bg-black/70"
+          aria-label={isHiddenFromProfile ? "Show on profile" : "Hide from profile"}
+          title={isHiddenFromProfile ? "Hidden from profile" : "Visible on profile"}
+        >
+          {isHiddenFromProfile ? (
+            <EyeOff className="size-4 text-amber-400" />
+          ) : (
+            <Eye className="size-4 text-white/80" />
+          )}
+        </button>
+      )}
       <Link href={`/oc/${oc.id}`} className="relative flex-1 overflow-hidden rounded-t-xl bg-zinc-900">
         {imageUrl ? (
           <Image
@@ -220,6 +241,11 @@ export function OCCard({
         {"is_hidden" in oc && oc.is_hidden && (
           <Badge variant="outline" className="w-fit border-amber-500/30 text-[10px] text-amber-400">
             Hidden
+          </Badge>
+        )}
+        {isHiddenFromProfile && (
+          <Badge variant="outline" className="w-fit border-purple-500/30 text-[10px] text-purple-400">
+            Profile hidden
           </Badge>
         )}
       </div>

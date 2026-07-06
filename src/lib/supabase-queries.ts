@@ -598,6 +598,15 @@ export async function isBlocked(oc1Id: string, oc2Id: string): Promise<boolean> 
   return (data?.length ?? 0) > 0;
 }
 
+export async function toggleOCHiddenFromProfile(ocId: string, hidden: boolean) {
+  const supabase = getClient();
+  const { error } = await supabase
+    .from("ocs")
+    .update({ is_hidden_from_profile: hidden })
+    .eq("id", ocId);
+  if (error) throw error;
+}
+
 export async function toggleOCSwipable(ocId: string, isSwipable: boolean) {
   const supabase = getClient();
   const { error } = await supabase

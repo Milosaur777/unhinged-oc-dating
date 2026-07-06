@@ -192,10 +192,11 @@ export default function SwipePage() {
               setMyOcForMatch(myOc ? { name: myOc.name, image_url: myOc.image_url } : null);
               setMatchedChatId(session.id);
               setMatchModalOpen(true);
+              toast.success(`Matched with ${current.name}!`);
             }
           } catch (err) {
-            console.error("Match check failed:", err);
-            // Still advance the card even if match detection fails
+            console.error("Match creation failed:", err);
+            toast.error(err instanceof Error ? err.message : "Failed to create match");
           }
         }
         setCurrentIndex((i) => i + 1);

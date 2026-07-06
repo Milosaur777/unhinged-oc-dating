@@ -93,6 +93,7 @@ export default function LikesPage() {
       setMatchedChatId(session.id);
       setMatchModalOpen(true);
       setLikes((prev) => prev.filter((l) => l.id !== like.id));
+      toast.success(`Matched with ${like.liker_oc?.name || "Unknown"}!`);
     } catch (err) {
       console.error("handleLikeBack error:", err);
       toast.error(err instanceof Error ? err.message : "Failed to match");

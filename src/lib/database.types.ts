@@ -376,6 +376,7 @@ export type Database = {
           image_url: string | null
           images: string[] | null
           is_hidden: boolean | null
+          is_hidden_from_profile: boolean | null
           is_premade: boolean | null
           is_swipable: boolean
           name: string
@@ -392,6 +393,7 @@ export type Database = {
           image_url?: string | null
           images?: string[] | null
           is_hidden?: boolean | null
+          is_hidden_from_profile?: boolean | null
           is_premade?: boolean | null
           is_swipable?: boolean
           name?: string
@@ -408,6 +410,7 @@ export type Database = {
           image_url?: string | null
           images?: string[] | null
           is_hidden?: boolean | null
+          is_hidden_from_profile?: boolean | null
           is_premade?: boolean | null
           is_swipable?: boolean
           name?: string
