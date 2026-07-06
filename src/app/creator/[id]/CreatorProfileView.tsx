@@ -25,6 +25,8 @@ export function CreatorProfileView({ profile, ocs }: CreatorProfileViewProps) {
     : null;
 
   const socialLinks = [
+    { key: "discord", label: "Discord", url: profile.creator_discord },
+    { key: "website", label: "Website", url: profile.creator_website },
     { key: "tumblr", label: "Tumblr", url: profile.creator_tumblr },
     { key: "twitter", label: "Twitter", url: profile.creator_twitter },
     { key: "bluesky", label: "Bluesky", url: profile.creator_bluesky },
