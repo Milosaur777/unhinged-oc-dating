@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
-import { getChatMessages, sendChatMessage, getProfile, getUserStatus, ChatMessage, OC } from "@/lib/supabase-queries";
+import { getChatMessages, sendChatMessage, getProfile, getUserStatus, markMessagesAsRead, editChatMessage, ChatMessage, OC } from "@/lib/supabase-queries";
 import { usePresence } from "@/lib/usePresence";
 import { getPublicImageUrl, getInitials, cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -157,6 +157,9 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
   const [reporting, setReporting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const gifSearchTimeout = useRef<ReturnType<typeof setTimeout>>(null);
 
@@ -169,6 +172,10 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
         ]);
         setMessages(data);
         setLargeText(profileData?.large_chat_text ?? false);
+        // Mark other person's unread messages as read
+        if (myOC?.id) {
+          await markMessagesAsRead(sessionId, myOC.id);
+        }
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Failed to load messages");
       } finally {
@@ -176,7 +183,7 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
       }
     }
     load();
-  }, [sessionId, user]);
+  }, [sessionId, user, myOC?.id]);
 
   // Fallback: poll partner status every 5 seconds
   useEffect(() => {
@@ -209,8 +216,27 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
           const newMsg = payload.new as ChatMessage;
           setMessages((prev) => {
             if (prev.some((m) => m.id === newMsg.id)) return prev;
+            // Mark other person's new messages as read
+            if (newMsg.from_oc_id !== myOC.id && myOC.id) {
+              markMessagesAsRead(sessionId, myOC.id).catch(() => {});
+            }
             return [...prev, newMsg];
           });
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "chat_messages",
+          filter: `chat_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          const updated = payload.new as ChatMessage;
+          setMessages((prev) =>
+            prev.map((m) => (m.id === updated.id ? updated : m))
+          );
         }
       )
       .subscribe((status) => {
@@ -230,11 +256,19 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
       try {
         const data = await getChatMessages(sessionId);
         setMessages((prev) => {
-          if (data.length === prev.length) return prev;
           const existingIds = new Set(prev.map((m) => m.id));
           const newMessages = data.filter((m) => !existingIds.has(m.id));
           if (newMessages.length === 0) return prev;
-          return [...prev, ...newMessages];
+          // Mark other person's new messages as read
+          const otherMessages = newMessages.filter((m) => m.from_oc_id !== myOC.id);
+          if (otherMessages.length > 0 && myOC.id) {
+            markMessagesAsRead(sessionId, myOC.id).catch(() => {});
+          }
+          return [...prev, ...newMessages].sort(
+            (a, b) =>
+              new Date(a.created_at || "1970-01-01").getTime() -
+              new Date(b.created_at || "1970-01-01").getTime()
+          );
         });
       } catch {
         // Silently ignore polling errors
@@ -356,6 +390,44 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
     } finally {
       setSending(false);
     }
+  }
+
+  function startEdit(msg: ChatMessage) {
+    if (msg.image_url) return; // Can't edit GIFs
+    setEditingMessageId(msg.id);
+    setEditText(msg.text);
+  }
+
+  function cancelEdit() {
+    setEditingMessageId(null);
+    setEditText("");
+  }
+
+  async function handleEdit() {
+    if (!editingMessageId || !editText.trim() || editLoading) return;
+    setEditLoading(true);
+    try {
+      const updated = await editChatMessage(editingMessageId, editText.trim());
+      setMessages((prev) =>
+        prev.map((m) => (m.id === updated.id ? updated : m))
+      );
+      setEditingMessageId(null);
+      setEditText("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to edit message");
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
+  function canEdit(msg: ChatMessage): boolean {
+    if (msg.from_oc_id !== myOC.id || msg.image_url) return false;
+    const created = new Date(msg.created_at || "1970-01-01").getTime();
+    return Date.now() - created < 15 * 60 * 1000;
+  }
+
+  function isRead(msg: ChatMessage): boolean {
+    return !!msg.read_at;
   }
 
   function addEmoji(emoji: string) {
@@ -567,34 +639,84 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
               >
                 <div
                   className={cn(
-                    "max-w-[80%] rounded-2xl px-4 py-2.5",
+                    "group/msg relative max-w-[80%] rounded-2xl px-4 py-2.5",
                     largeText ? "text-base" : "text-sm",
                     isMyMessage(msg)
                       ? "rounded-br-sm bg-gradient-to-br from-purple-600 to-purple-700 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)]"
                       : "rounded-bl-sm bg-white/[0.06] text-foreground ring-1 ring-white/5"
                   )}
                 >
-                  {msg.image_url ? (
-                    <Image
-                      src={getPublicImageUrl(msg.image_url)}
-                      alt="GIF"
-                      width={200}
-                      height={200}
-                      className="rounded-lg"
-                      unoptimized
-                    />
+                  {editingMessageId === msg.id ? (
+                    <div className="flex flex-col gap-2">
+                      <Input
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        className="border-white/20 bg-white/10 text-white"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleEdit();
+                          }
+                          if (e.key === "Escape") cancelEdit();
+                        }}
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-[10px] text-white/70"
+                          onClick={cancelEdit}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="h-7 text-[10px]"
+                          onClick={handleEdit}
+                          disabled={editLoading || !editText.trim()}
+                        >
+                          Save
+                        </Button>
+                      </div>
+                    </div>
                   ) : (
-                    <span className="text-left">{msg.text}</span>
+                    <>
+                      {msg.image_url ? (
+                        <Image
+                          src={getPublicImageUrl(msg.image_url)}
+                          alt="GIF"
+                          width={200}
+                          height={200}
+                          className="rounded-lg"
+                          unoptimized
+                        />
+                      ) : (
+                        <span
+                          className={cn(
+                            "cursor-pointer text-left",
+                            canEdit(msg) && "hover:underline hover:underline-offset-2"
+                          )}
+                          onClick={() => canEdit(msg) && startEdit(msg)}
+                          title={canEdit(msg) ? "Click to edit (within 15 min)" : undefined}
+                        >
+                          {msg.text}
+                        </span>
+                      )}
+                      <div className={cn(
+                        "mt-1 flex items-center gap-1 text-[10px]",
+                        isMyMessage(msg) ? "text-white/60" : "text-muted-foreground"
+                      )}>
+                        <span>{formatMessageTime(msg.created_at || "")}</span>
+                        {msg.edited_at && <span>(edited)</span>}
+                        {isMyMessage(msg) && (
+                          <span title={isRead(msg) ? "Read" : "Sent"}>
+                            {isRead(msg) ? "✓✓" : "✓"}
+                          </span>
+                        )}
+                      </div>
+                    </>
                   )}
-                  <div className={cn(
-                    "mt-1 flex items-center gap-1 text-[10px]",
-                    isMyMessage(msg) ? "text-white/60" : "text-muted-foreground"
-                  )}>
-                    <span>{formatMessageTime(msg.created_at || "")}</span>
-                    {isMyMessage(msg) && (
-                      <span>✓✓</span>
-                    )}
-                  </div>
                 </div>
               </div>
             ))}

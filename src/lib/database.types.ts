@@ -54,25 +54,31 @@ export type Database = {
         Row: {
           chat_id: string
           created_at: string | null
+          edited_at: string | null
           from_oc_id: string
           id: string
           image_url: string | null
+          read_at: string | null
           text: string
         }
         Insert: {
           chat_id: string
           created_at?: string | null
+          edited_at?: string | null
           from_oc_id: string
           id?: string
           image_url?: string | null
+          read_at?: string | null
           text: string
         }
         Update: {
           chat_id?: string
           created_at?: string | null
+          edited_at?: string | null
           from_oc_id?: string
           id?: string
           image_url?: string | null
+          read_at?: string | null
           text?: string
         }
         Relationships: [

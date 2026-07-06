@@ -560,6 +560,32 @@ export async function sendChatMessage(
   return data[0];
 }
 
+export async function markMessagesAsRead(chatId: string, ocId: string) {
+  const supabase = getClient();
+  const { error } = await supabase
+    .from("chat_messages")
+    .update({ read_at: new Date().toISOString() })
+    .eq("chat_id", chatId)
+    .neq("from_oc_id", ocId)
+    .is("read_at", null);
+  if (error) throw error;
+}
+
+export async function editChatMessage(
+  messageId: string,
+  text: string
+): Promise<ChatMessage> {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from("chat_messages")
+    .update({ text, edited_at: new Date().toISOString() })
+    .eq("id", messageId)
+    .select();
+  if (error) throw error;
+  if (!data || data.length === 0) throw new Error("Message not found");
+  return data[0];
+}
+
 export async function deleteChatSession(chatId: string) {
   const supabase = getClient();
   const { error } = await supabase.from("chat_sessions").delete().eq("id", chatId);
