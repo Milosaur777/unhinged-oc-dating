@@ -125,14 +125,14 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowProps) {
-  const theirOC = oc2 as OC | null;
   const { user } = useAuth();
   const rawOc1 = oc1 as OC;
   const rawOc2 = oc2 as OC | null;
   const myOC = myOcId
     ? (myOcId === rawOc1?.id ? rawOc1 : (rawOc2 ?? rawOc1))
     : rawOc1;
-  const partnerUserId = myOC.id === rawOc1?.id ? rawOc2?.user_id : rawOc1?.user_id;
+  const theirOC = myOC.id === rawOc1?.id ? rawOc2 : rawOc1;
+  const partnerUserId = theirOC?.user_id;
   const presenceMap = usePresence(user && !("is_guest" in user) ? user.id : null);
   const partnerStatus = partnerUserId ? presenceMap.get(partnerUserId) : undefined;
   const isPartnerOnline = partnerStatus === "online" || partnerStatus === "idle";
@@ -197,7 +197,11 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR") {
+          console.error("Realtime subscription error for chat:", sessionId);
+        }
+      });
     return () => {
       supabase.removeChannel(channel);
     };
