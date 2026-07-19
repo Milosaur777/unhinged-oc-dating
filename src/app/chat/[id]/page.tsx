@@ -38,6 +38,7 @@ export default async function ChatPage({ params }: PageProps) {
   return (
     <ChatWindow
       sessionId={session.id}
+      chatLevel={session.chat_level ?? 1}
       oc1={session.oc1}
       oc2={session.oc2}
       oc2Name={session.oc2_name}

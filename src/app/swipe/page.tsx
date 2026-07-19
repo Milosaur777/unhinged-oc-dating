@@ -15,6 +15,7 @@ import {
   recordSwipe,
   checkMutualLike,
   createChatSession,
+  getChatSessionByOCs,
   OCWithDetails,
   getUserOCs,
   resetSwipes,
@@ -25,6 +26,7 @@ import { toast } from "sonner";
 import MatchModal from "@/components/match/MatchModal";
 
 const SWIPE_KEY = "unhinged_swipe_state";
+const DECK_KEY = (ocId: string) => `unhinged_swipe_deck_${ocId}`;
 
 interface SwipeState {
   ocId: string;
@@ -44,6 +46,99 @@ function getVelocityThreshold() {
 
 function getField(oc: OCWithDetails, key: string): string | null {
   return oc.fields.find((f) => f.field_key === key && f.visible !== false)?.value ?? null;
+}
+
+function countTagMatches(candidateTags: string[] | null, myTags: string[]): number {
+  if (!candidateTags || candidateTags.length === 0 || myTags.length === 0) return 0;
+  const mySet = new Set(myTags.map((t) => t.toLowerCase()));
+  return candidateTags.filter((t) => mySet.has(t.toLowerCase())).length;
+}
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function sortAndShuffle(candidates: OCWithDetails[], myOcTags: string[]): OCWithDetails[] {
+  // Score each candidate by tag overlap
+  const scored = candidates.map((c) => ({
+    candidate: c,
+    score: countTagMatches(c.tags, myOcTags),
+  }));
+
+  // Group by score
+  const groups = new Map<number, OCWithDetails[]>();
+  for (const { candidate, score } of scored) {
+    const existing = groups.get(score) ?? [];
+    existing.push(candidate);
+    groups.set(score, existing);
+  }
+
+  // Sort scores descending, shuffle each group, concatenate
+  const sortedScores = Array.from(groups.keys()).sort((a, b) => b - a);
+  const result: OCWithDetails[] = [];
+  for (const score of sortedScores) {
+    const group = groups.get(score)!;
+    result.push(...shuffleArray(group));
+  }
+  return result;
+}
+
+function saveDeckOrder(ocId: string, candidateIds: string[]) {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(DECK_KEY(ocId), JSON.stringify(candidateIds));
+  } catch {
+    // Ignore quota errors
+  }
+}
+
+function loadDeckOrder(ocId: string): string[] | null {
+  if (typeof window === "undefined") return null;
+  const raw = sessionStorage.getItem(DECK_KEY(ocId));
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.every((id) => typeof id === "string")) {
+      return parsed;
+    }
+  } catch {
+    sessionStorage.removeItem(DECK_KEY(ocId));
+  }
+  return null;
+}
+
+function restoreDeckOrder(
+  candidates: OCWithDetails[],
+  ocId: string
+): OCWithDetails[] | null {
+  const savedOrder = loadDeckOrder(ocId);
+  if (!savedOrder) return null;
+
+  const candidateMap = new Map(candidates.map((c) => [c.id, c]));
+  const restored: OCWithDetails[] = [];
+
+  // Add candidates in saved order
+  for (const id of savedOrder) {
+    const candidate = candidateMap.get(id);
+    if (candidate) {
+      restored.push(candidate);
+      candidateMap.delete(id);
+    }
+  }
+
+  // Append any new candidates not in the saved order
+  for (const candidate of candidates) {
+    if (candidateMap.has(candidate.id)) {
+      restored.push(candidate);
+    }
+  }
+
+  return restored;
 }
 
 export default function SwipePage() {
@@ -122,16 +217,28 @@ export default function SwipePage() {
       try {
         const fresh = await getSwipeCandidates([selectedOcId!], user!.id);
         if (!cancelled) {
-          setCandidates(fresh);
+          const myOc = myOCs.find((o) => o.id === selectedOcId);
+          const myTags = myOc?.tags ?? [];
+
+          // Try to restore existing deck order first
+          let ordered = restoreDeckOrder(fresh, selectedOcId!);
+          if (!ordered) {
+            // No saved deck: score, shuffle, and save
+            ordered = sortAndShuffle(fresh, myTags);
+            saveDeckOrder(selectedOcId!, ordered.map((c) => c.id));
+          }
+
+          setCandidates(ordered);
+
           const savedSession = sessionStorage.getItem(SWIPE_KEY);
           if (savedSession) {
             try {
               const state: SwipeState = JSON.parse(savedSession);
               if (state.ocId === selectedOcId) {
                 if (state.targetOcId) {
-                  const idx = fresh.findIndex((c) => c.id === state.targetOcId);
+                  const idx = ordered.findIndex((c) => c.id === state.targetOcId);
                   if (idx !== -1) setCurrentIndex(idx);
-                } else if (state.index < fresh.length) {
+                } else if (state.index < ordered.length) {
                   setCurrentIndex(state.index);
                 }
               }
@@ -147,7 +254,7 @@ export default function SwipePage() {
     }
     load();
     return () => { cancelled = true; };
-  }, [selectedOcId, user]);
+  }, [selectedOcId, user, myOCs]);
 
   const current = candidates[currentIndex];
 
@@ -157,7 +264,17 @@ export default function SwipePage() {
     try {
       await resetSwipes(user.id);
       const fresh = await getSwipeCandidates([selectedOcId], user.id);
-      setCandidates(fresh);
+      const myOc = myOCs.find((o) => o.id === selectedOcId);
+      const myTags = myOc?.tags ?? [];
+
+      // Clear saved deck and generate fresh scored + shuffled order
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem(DECK_KEY(selectedOcId));
+      }
+      const ordered = sortAndShuffle(fresh, myTags);
+      saveDeckOrder(selectedOcId, ordered.map((c) => c.id));
+
+      setCandidates(ordered);
       setCurrentIndex(0);
       toast.success("Swipes reset");
     } catch (err) {
@@ -176,18 +293,34 @@ export default function SwipePage() {
       .then(async () => {
         if (action === "like") {
           try {
-            const mutual = await checkMutualLike(selectedOcId, current.id);
-            if (mutual) {
-              const session = await createChatSession(
-                selectedOcId,
-                current.id,
-                user!.id,
-                current.user_id,
-                null,
-                null,
-                myOc?.name || null,
-                current.name
-              );
+            // First: check if the database trigger already created a session
+            let session = await getChatSessionByOCs(selectedOcId, current.id);
+            let isNewMatch = false;
+
+            if (session) {
+              console.log("[swipe] Chat session found (trigger created):", session.id);
+              isNewMatch = true;
+            } else {
+              // No session yet — check for mutual like and create one
+              const mutual = await checkMutualLike(selectedOcId, current.id);
+              console.log("[swipe] Mutual like check:", mutual);
+              if (mutual) {
+                session = await createChatSession(
+                  selectedOcId,
+                  current.id,
+                  user!.id,
+                  current.user_id,
+                  null,
+                  null,
+                  myOc?.name || null,
+                  current.name
+                );
+                isNewMatch = true;
+                console.log("[swipe] Chat session created:", session.id);
+              }
+            }
+
+            if (session && isNewMatch) {
               setMatchedOc({ name: current.name, image_url: current.image_url, id: current.id });
               setMyOcForMatch(myOc ? { name: myOc.name, image_url: myOc.image_url } : null);
               setMatchedChatId(session.id);
@@ -195,14 +328,14 @@ export default function SwipePage() {
               toast.success(`Matched with ${current.name}!`);
             }
           } catch (err) {
-            console.error("Match creation failed:", err);
+            console.error("[swipe] Match creation failed:", err);
             toast.error(err instanceof Error ? err.message : "Failed to create match");
           }
         }
         setCurrentIndex((i) => i + 1);
       })
       .catch((err) => {
-        console.error("recordSwipe failed:", err);
+        console.error("[swipe] recordSwipe failed:", err);
         toast.error(err instanceof Error ? err.message : "Failed to record swipe");
         setCurrentIndex((i) => i + 1);
       });

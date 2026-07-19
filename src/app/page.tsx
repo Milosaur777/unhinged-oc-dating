@@ -75,6 +75,7 @@ const MOBILE_OFFSETS: Record<string, number> = {
   "/headers/Lounge.avif": 75,
   "/headers/Church.avif": 65,
   "/headers/Dungeon.avif": 85,
+  "/headers/Fireplace.avif": 60,
   "/headers/Forest.avif": 90,
   "/headers/Gala.avif": 30,
   "/headers/MasterBedroom.avif": 60,
@@ -83,8 +84,12 @@ const MOBILE_OFFSETS: Record<string, number> = {
   "/headers/OasisParty.avif": 65,
   "/headers/PrisonCell.avif": 60,
   "/headers/Shrine.avif": 60,
+  "/headers/Sky.avif": 50,
+  "/headers/SnowyPass.avif": 70,
+  "/headers/Spirits.avif": 60,
   "/headers/Study.avif": 70,
   "/headers/Tavern.avif": 90,
+  "/headers/Underwater.avif": 65,
 };
 
 function getFieldValue(oc: OCWithDetails, key: string): string | null {

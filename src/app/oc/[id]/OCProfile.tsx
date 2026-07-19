@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Copy, Pencil, ArrowLeft } from "lucide-react";
+import { Copy, Pencil, ArrowLeft, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
 import { TagPillList } from "@/components/ui/TagPill";
@@ -14,6 +14,11 @@ import { OCWithDetails, OCField, Profile, recordProfileView } from "@/lib/supaba
 import { getPublicImageUrl, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase";
+
+interface ShuffledItem {
+  text: string;
+  originalIndex: number;
+}
 
 interface OCProfileProps {
   oc: OCWithDetails;
@@ -27,10 +32,27 @@ function getField(oc: OCWithDetails, key: string): OCField | undefined {
   return oc.fields.find((f) => f.field_key === key && f.visible !== false && f.skipped !== true);
 }
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const shuffled = [...arr];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export function OCProfile({ oc, isOwner, backToSwipe, fromOc, fromPage }: OCProfileProps) {
   const router = useRouter();
   const imageUrl = getPublicImageUrl(oc.image_url);
   const [creatorProfile, setCreatorProfile] = useState<Profile | null>(null);
+
+  const shuffledItems = useMemo<ShuffledItem[]>(() => {
+    if (!oc.truths_and_lie || oc.truths_and_lie.length !== 3) return [];
+    const items = oc.truths_and_lie.map((text, i) => ({ text, originalIndex: i }));
+    return shuffleArray(items);
+  }, [oc.truths_and_lie]);
+
+  const [guessedIndex, setGuessedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     async function loadCreator() {
@@ -284,23 +306,60 @@ export function OCProfile({ oc, isOwner, backToSwipe, fromOc, fromPage }: OCProf
               </div>
             )}
 
-            {oc.truths_and_lie && oc.truths_and_lie.length === 3 && (
+            {shuffledItems.length === 3 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Truths & Lie</CardTitle>
+                  <CardTitle>Two Truths & a Lie</CardTitle>
+                  {!isOwner && guessedIndex === null && (
+                    <p className="text-xs text-muted-foreground">Pick the lie — can&apos;t fool you!</p>
+                  )}
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
-                  {oc.truths_and_lie.map((item, i) => (
-                    <div
-                      key={i}
-                      className={`rounded-lg border p-3 text-sm ${
-                        i === 2 ? "border-destructive/30 bg-destructive/10" : "border-border bg-muted/30"
-                      }`}
-                    >
-                      <span className="font-semibold">{i === 2 ? "Lie" : `Truth ${i + 1}`}:</span>{" "}
-                      {item}
-                    </div>
-                  ))}
+                  {shuffledItems.map((item, i) => {
+                    const isLie = item.originalIndex === 2;
+                    const isSelected = guessedIndex === i;
+                    const revealed = guessedIndex !== null;
+
+                    let borderClass = "border-border bg-muted/30";
+                    let icon = null;
+
+                    if (revealed) {
+                      if (isLie) {
+                        borderClass = "border-destructive/50 bg-destructive/10";
+                        icon = <XCircle className="size-4 shrink-0 text-destructive" />;
+                      } else if (isSelected) {
+                        borderClass = "border-emerald-500/50 bg-emerald-500/10";
+                        icon = <CheckCircle className="size-4 shrink-0 text-emerald-500" />;
+                      } else {
+                        borderClass = "border-border bg-muted/30 opacity-60";
+                      }
+                    } else if (!isOwner) {
+                      borderClass = "border-border bg-muted/30 hover:border-foreground/30 hover:bg-muted/50 cursor-pointer transition-colors";
+                    }
+
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        disabled={isOwner || revealed}
+                        onClick={() => setGuessedIndex(i)}
+                        className={`flex items-start gap-2 rounded-lg border p-3 text-left text-sm ${borderClass} ${!isOwner && !revealed ? "hover:scale-[1.01] active:scale-[0.99]" : ""} transition-all duration-150`}
+                      >
+                        <span className="font-semibold whitespace-nowrap">
+                          {revealed ? (isLie ? "Lie" : `Truth`) : `#${i + 1}`}
+                        </span>
+                        <span className="flex-1">{item.text}</span>
+                        {icon}
+                      </button>
+                    );
+                  })}
+                  {guessedIndex !== null && (
+                    <p className={`mt-1 text-sm font-medium ${shuffledItems[guessedIndex].originalIndex === 2 ? "text-emerald-500" : "text-muted-foreground"}`}>
+                      {shuffledItems[guessedIndex].originalIndex === 2
+                        ? "You caught the lie!"
+                        : `Wrong — that was a truth. The lie was #${shuffledItems.findIndex((it) => it.originalIndex === 2) + 1}.`}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             )}

@@ -346,7 +346,6 @@ export async function getSwipeCandidates(
     .eq("is_hidden", false)
     .neq("user_id", userId)
     .not("id", "in", `(${(swipedIds.size > 0 ? Array.from(swipedIds).join(",") : "00000000-0000-0000-0000-000000000000")})`)
-    .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
 
@@ -437,22 +436,44 @@ export async function createChatSession(
   const oc2UserNameFinal = secondIsOc1 ? oc1UserName : oc2UserName;
   const oc2NameFinal = secondIsOc1 ? oc1Name : oc2Name;
 
+  // Check if session already exists (e.g. created by handle_mutual_like trigger)
+  const { data: existing, error: existingError } = await supabase
+    .from("chat_sessions")
+    .select("*")
+    .eq("oc1_id", firstId)
+    .eq("oc2_id", secondId)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+  if (existing) return existing as ChatSession;
+
+  // Insert new session
   const { data, error } = await supabase
     .from("chat_sessions")
-    .upsert(
-      {
-        oc1_id: firstId,
-        oc2_id: secondId,
-        oc2_user_id: oc2UserIdFinal,
-        oc2_user_name: oc2UserNameFinal,
-        oc2_name: oc2NameFinal,
-      },
-      { onConflict: "oc1_id,oc2_id" }
-    )
+    .insert({
+      oc1_id: firstId,
+      oc2_id: secondId,
+      oc2_user_id: oc2UserIdFinal,
+      oc2_user_name: oc2UserNameFinal,
+      oc2_name: oc2NameFinal,
+    })
     .select()
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function getChatSessionByOCs(oc1Id: string, oc2Id: string): Promise<ChatSession | null> {
+  const supabase = getClient();
+  const [firstId, secondId] = oc1Id < oc2Id ? [oc1Id, oc2Id] : [oc2Id, oc1Id];
+  const { data, error } = await supabase
+    .from("chat_sessions")
+    .select("*")
+    .eq("oc1_id", firstId)
+    .eq("oc2_id", secondId)
+    .maybeSingle();
+  if (error) throw error;
+  return data as ChatSession | null;
 }
 
 export async function getChatSessions(userId: string): Promise<ChatSessionWithOCs[]> {
@@ -688,4 +709,43 @@ export async function getUserStatus(userId: string): Promise<string | null> {
     .single();
   if (error) return null;
   return data?.status ?? null;
+}
+
+export async function getChatSession(chatId: string) {
+  const supabase = getClient();
+  const { data, error } = await supabase
+    .from("chat_sessions")
+    .select("id, chat_level, oc1_id, oc2_id, oc2_name, oc1:ocs!oc1_id(id, name, image_url, user_id), oc2:ocs!oc2_id(id, name, image_url, user_id)")
+    .eq("id", chatId)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function moderateImage(imageUrl: string): Promise<{ safe: boolean; skipped?: boolean }> {
+  const res = await fetch("/api/moderate-image", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ imageUrl }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Moderation request failed" }));
+    throw new Error(err.error || `Moderation failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export function extractStoragePath(publicUrl: string, bucket = "oc-images"): string {
+  const marker = `/object/public/${bucket}/`;
+  const idx = publicUrl.indexOf(marker);
+  if (idx === -1) return "";
+  return publicUrl.slice(idx + marker.length);
+}
+
+export async function deleteStorageObject(publicUrl: string, bucket = "oc-images"): Promise<void> {
+  const supabase = getClient();
+  const path = extractStoragePath(publicUrl, bucket);
+  if (!path) return;
+  const { error } = await supabase.storage.from(bucket).remove([path]);
+  if (error) console.error("Failed to delete storage object:", error);
 }

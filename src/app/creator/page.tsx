@@ -38,6 +38,8 @@ import {
   toggleAllOCSwipable,
   uploadImage,
   clearProfileField,
+  moderateImage,
+  deleteStorageObject,
   Profile,
   OC,
 } from "@/lib/supabase-queries";
@@ -52,6 +54,7 @@ const MOBILE_OFFSETS: Record<string, number> = {
   "/headers/Lounge.avif": 75,
   "/headers/Church.avif": 65,
   "/headers/Dungeon.avif": 85,
+  "/headers/Fireplace.avif": 60,
   "/headers/Forest.avif": 90,
   "/headers/Gala.avif": 30,
   "/headers/MasterBedroom.avif": 60,
@@ -60,8 +63,12 @@ const MOBILE_OFFSETS: Record<string, number> = {
   "/headers/OasisParty.avif": 65,
   "/headers/PrisonCell.avif": 60,
   "/headers/Shrine.avif": 60,
+  "/headers/Sky.avif": 50,
+  "/headers/SnowyPass.avif": 70,
+  "/headers/Spirits.avif": 60,
   "/headers/Study.avif": 70,
   "/headers/Tavern.avif": 90,
+  "/headers/Underwater.avif": 65,
 };
 
 const PRESET_HEADERS = [
@@ -72,6 +79,7 @@ const PRESET_HEADERS = [
   { name: "Lounge", path: "/headers/Lounge.avif" },
   { name: "Church", path: "/headers/Church.avif" },
   { name: "Dungeon", path: "/headers/Dungeon.avif" },
+  { name: "Fireplace", path: "/headers/Fireplace.avif" },
   { name: "Forest", path: "/headers/Forest.avif" },
   { name: "Gala", path: "/headers/Gala.avif" },
   { name: "Infinity Pool", path: "/headers/InfinityPoolPenthouse.avif" },
@@ -83,8 +91,12 @@ const PRESET_HEADERS = [
   { name: "Oasis Party", path: "/headers/OasisParty.avif" },
   { name: "Prison Cell", path: "/headers/PrisonCell.avif" },
   { name: "Shrine", path: "/headers/Shrine.avif" },
+  { name: "Sky", path: "/headers/Sky.avif" },
+  { name: "Snowy Pass", path: "/headers/SnowyPass.avif" },
+  { name: "Spirits", path: "/headers/Spirits.avif" },
   { name: "Study", path: "/headers/Study.avif" },
   { name: "Tavern", path: "/headers/Tavern.avif" },
+  { name: "Underwater", path: "/headers/Underwater.avif" },
 ];
 
 export default function CreatorPage() {
@@ -233,6 +245,12 @@ export default function CreatorPage() {
     setUploadingHeader(true);
     try {
       const path = await uploadImage(file, "headers");
+      const result = await moderateImage(path);
+      if (!result.safe) {
+        await deleteStorageObject(path, "oc-images");
+        toast.error("Header image was flagged as inappropriate. Please choose a different image.");
+        return;
+      }
       setForm((prev) => ({ ...prev, creatorHeaderUrl: path }));
       await upsertProfile({ id: user.id, creator_header_url: path });
       toast.success("Banner saved");
@@ -261,6 +279,12 @@ export default function CreatorPage() {
     setUploadingAvatar(true);
     try {
       const path = await uploadImage(file, "avatars");
+      const result = await moderateImage(path);
+      if (!result.safe) {
+        await deleteStorageObject(path, "oc-images");
+        toast.error("Avatar image was flagged as inappropriate. Please choose a different image.");
+        return;
+      }
       setForm((prev) => ({ ...prev, creatorAvatarUrl: path }));
       toast.success("Avatar uploaded — click Save to apply");
     } catch (err) {

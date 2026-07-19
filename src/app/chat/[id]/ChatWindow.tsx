@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Send, Smile, X, Search, MoreVertical, Download, Flag } from "lucide-react";
+import { ArrowLeft, Send, Smile, X, Search, MoreVertical, Download, Flag, ImagePlus, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
-import { getChatMessages, sendChatMessage, getProfile, getUserStatus, markMessagesAsRead, editChatMessage, ChatMessage, OC } from "@/lib/supabase-queries";
+import { getChatMessages, sendChatMessage, getProfile, getUserStatus, markMessagesAsRead, editChatMessage, ChatMessage, OC, uploadImage, moderateImage, deleteStorageObject } from "@/lib/supabase-queries";
 import { usePresence } from "@/lib/usePresence";
 import { getPublicImageUrl, getInitials, cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -118,13 +118,14 @@ const KAOMOJIS = [
 
 interface ChatWindowProps {
   sessionId: string;
+  chatLevel: number;
   oc1: unknown;
   oc2: unknown;
   oc2Name: string | null;
   myOcId?: string;
 }
 
-export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowProps) {
+export function ChatWindow({ sessionId, chatLevel, oc1, oc2, oc2Name, myOcId }: ChatWindowProps) {
   const { user } = useAuth();
   const rawOc1 = oc1 as OC;
   const rawOc2 = oc2 as OC | null;
@@ -160,6 +161,8 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [editLoading, setEditLoading] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const gifSearchTimeout = useRef<ReturnType<typeof setTimeout>>(null);
 
@@ -295,8 +298,10 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
       const res = await fetch(
         `https://api.klipy.com/api/v1/${KLIPY_KEY}/gifs/search?q=${encodeURIComponent(query)}&page=${page}&per_page=24&format_filter=gif`
       );
-      const data = await res.json();
-      const gifs: KlipyGif[] = (data.data ?? []).map(
+      const json = await res.json();
+      const raw = json.data ?? json;
+      const list = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
+      const gifs: KlipyGif[] = list.map(
         (r: { id: number; title?: string; file?: { md?: { gif?: { url?: string } }; sm?: { gif?: { url?: string } } } }) => ({
           id: r.id,
           title: r.title || "",
@@ -320,8 +325,10 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
       const res = await fetch(
         `https://api.klipy.com/api/v1/${KLIPY_KEY}/gifs/trending?per_page=24&format_filter=gif`
       );
-      const data = await res.json();
-      const gifs: KlipyGif[] = (data.data ?? []).map(
+      const json = await res.json();
+      const raw = json.data ?? json;
+      const list = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
+      const gifs: KlipyGif[] = list.map(
         (r: { id: number; title?: string; file?: { md?: { gif?: { url?: string } }; sm?: { gif?: { url?: string } } } }) => ({
           id: r.id,
           title: r.title || "",
@@ -392,8 +399,39 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
     }
   }
 
+  async function handleImageUpload(file: File) {
+    if (chatLevel < 5) {
+      toast.error(`Reach Level 5 to send images! Currently Lv. ${chatLevel}`);
+      return;
+    }
+    if (imageUploading || sending) return;
+    setImageUploading(true);
+    let imageUrl = "";
+    try {
+      imageUrl = await uploadImage(file, "chat-images");
+      const result = await moderateImage(imageUrl);
+      if (!result.safe) {
+        await deleteStorageObject(imageUrl, "oc-images");
+        toast.error("This image was flagged as inappropriate and cannot be sent.");
+        return;
+      }
+      setSending(true);
+      const msg = await sendChatMessage(sessionId, myOC.id, "", imageUrl);
+      setMessages((prev) => [...prev, msg]);
+    } catch (err) {
+      if (imageUrl) {
+        await deleteStorageObject(imageUrl, "oc-images").catch(() => {});
+      }
+      toast.error(err instanceof Error ? err.message : "Failed to send image");
+    } finally {
+      setImageUploading(false);
+      setSending(false);
+      if (imageInputRef.current) imageInputRef.current.value = "";
+    }
+  }
+
   function startEdit(msg: ChatMessage) {
-    if (msg.image_url) return; // Can't edit GIFs
+    if (msg.image_url) return; // Can't edit GIFs or images
     setEditingMessageId(msg.id);
     setEditText(msg.text);
   }
@@ -442,7 +480,7 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
     const lines = messages.map((msg) => {
       const sender = msg.from_oc_id === myOC.id ? myOC.name : theirOC?.name || "Unknown";
       const time = new Date(msg.created_at || "1970-01-01T00:00:00Z").toLocaleString();
-      const text = msg.image_url ? "[GIF]" : msg.text;
+      const text = msg.image_url ? "[Image]" : msg.text;
       return `[${time}] ${sender}: ${text}`;
     });
     const header = `Chat: ${myOC.name} ↔ ${theirOC?.name || oc2Name || "Unknown"}\nExported: ${new Date().toLocaleString()}\n${"─".repeat(50)}\n\n`;
@@ -497,9 +535,9 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
   const chatContent = (
     <>
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-white/5 px-4 py-3">
-        <Link href="/chat" className="rounded-md p-1 hover:bg-white/10">
-          <ArrowLeft className="size-5 text-muted-foreground" />
+      <div className="flex shrink-0 items-center gap-3 border-b border-white/5 px-4 py-3">
+        <Link href="/chat" className="rounded-md p-2 hover:bg-white/10">
+          <ArrowLeft className="size-6 text-muted-foreground" />
         </Link>
         <div className="flex items-center gap-2">
           <Link
@@ -507,50 +545,50 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
             onClick={(e) => e.stopPropagation()}
             className="cursor-pointer"
           >
-            <div className="relative size-10 overflow-hidden rounded-full bg-muted transition-all duration-200 hover:ring-2 hover:ring-purple-500/50">
+            <div className="relative size-12 overflow-hidden rounded-full bg-muted transition-all duration-200 hover:ring-2 hover:ring-purple-500/50">
               {myOC.image_url ? (
                 <Image
                   src={getPublicImageUrl(myOC.image_url)}
                   alt={myOC.name}
                   fill
                   className="object-cover"
-                  sizes="40px"
+                  sizes="48px"
                 />
               ) : (
-                <div className="flex size-full items-center justify-center text-[10px] font-bold">
+                <div className="flex size-full items-center justify-center text-xs font-bold">
                   {getInitials(myOC.name)}
                 </div>
               )}
             </div>
           </Link>
-          <span className="text-muted-foreground">↔</span>
+          <span className="text-lg text-muted-foreground">↔</span>
           <Link
             href={`/oc/${theirOC?.id}?from=chat`}
             onClick={(e) => e.stopPropagation()}
             className="cursor-pointer"
           >
-            <div className="relative size-10 overflow-hidden rounded-full bg-muted transition-all duration-200 hover:ring-2 hover:ring-purple-500/50">
+            <div className="relative size-12 overflow-hidden rounded-full bg-muted transition-all duration-200 hover:ring-2 hover:ring-purple-500/50">
               {theirOC?.image_url ? (
                 <Image
                   src={getPublicImageUrl(theirOC.image_url)}
                   alt={theirOC.name}
                   fill
                   className="object-cover"
-                  sizes="40px"
+                  sizes="48px"
                 />
               ) : (
-                <div className="flex size-full items-center justify-center text-[10px] font-bold">
+                <div className="flex size-full items-center justify-center text-xs font-bold">
                   {getInitials(theirOC?.name || oc2Name || "?")}
                 </div>
               )}
             </div>
           </Link>
         </div>
-        <div className="ml-2 min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">
+        <div className="ml-3 min-w-0 flex-1">
+          <p className="truncate text-base font-semibold">
             {myOC.name} ↔ {theirOC?.name || oc2Name || "Unknown"}
           </p>
-          <p className="text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-sm">
             {partnerStatus === "online" ? (
               <span className="text-green-500">● Online</span>
             ) : partnerStatus === "idle" ? (
@@ -558,20 +596,34 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
             ) : partnerStatus === "busy" ? (
               <span className="text-red-500">● Busy</span>
             ) : (
-              <span>● Offline</span>
+              <span className="text-muted-foreground">● Offline</span>
             )}
-          </p>
+            <span className="text-muted-foreground">·</span>
+            <span
+              className="inline-flex items-center gap-1 rounded-md bg-purple-500/10 px-1.5 py-0.5 text-xs font-medium text-purple-400"
+              title={chatLevel >= 5 ? "Max level reached — image sharing unlocked!" : `Lv. ${chatLevel} · ${(() => {
+                const thresholds = [0, 3, 9, 21, 45];
+                const next = thresholds[chatLevel] ?? null;
+                const current = thresholds[chatLevel - 1] ?? 0;
+                const needed = next !== null ? next - messages.length : 0;
+                return needed > 0 ? `${needed} more message${needed === 1 ? "" : "s"} to Lv. ${chatLevel + 1}` : "Level up incoming...";
+              })()}`}
+            >
+              Lv. {chatLevel}
+              {chatLevel >= 5 && " ✨"}
+            </span>
+          </div>
         </div>
-        <Button variant="ghost" size="icon-sm" className="text-muted-foreground" onClick={() => setShowSearch((s) => !s)}>
-          <Search className="size-4" />
+        <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => setShowSearch((s) => !s)}>
+          <Search className="size-5" />
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <Button variant="ghost" size="icon-sm" className="text-muted-foreground" />
+              <Button variant="ghost" size="icon" className="text-muted-foreground" />
             }
           >
-            <MoreVertical className="size-4" />
+            <MoreVertical className="size-5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={handleExportChat}>
@@ -603,7 +655,7 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
       )}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
         {loading ? (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          <div className="flex h-full items-center justify-center text-base text-muted-foreground">
             Loading messages...
           </div>
         ) : filteredMessages.length === 0 ? (
@@ -618,7 +670,7 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
             <p className="text-lg font-semibold text-foreground">
               {searchQuery.trim() ? "No matching messages." : "No messages yet."}
             </p>
-            <p className="text-sm">{searchQuery.trim() ? "Try a different search term." : "Break the ice."}</p>
+            <p className="text-base">{searchQuery.trim() ? "Try a different search term." : "Break the ice."}</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
@@ -640,7 +692,7 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
                 <div
                   className={cn(
                     "group/msg relative max-w-[80%] rounded-2xl px-4 py-2.5",
-                    largeText ? "text-base" : "text-sm",
+                    largeText ? "text-lg" : "text-base",
                     isMyMessage(msg)
                       ? "rounded-br-sm bg-gradient-to-br from-purple-600 to-purple-700 text-white shadow-[0_0_20px_rgba(147,51,234,0.3)]"
                       : "rounded-bl-sm bg-white/[0.06] text-foreground ring-1 ring-white/5"
@@ -685,7 +737,7 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
                       {msg.image_url ? (
                         <Image
                           src={getPublicImageUrl(msg.image_url)}
-                          alt="GIF"
+                          alt="Image"
                           width={200}
                           height={200}
                           className="rounded-lg"
@@ -704,7 +756,7 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
                         </span>
                       )}
                       <div className={cn(
-                        "mt-1 flex items-center gap-1 text-[10px]",
+                        "mt-1 flex items-center gap-1 text-xs",
                         isMyMessage(msg) ? "text-white/60" : "text-muted-foreground"
                       )}>
                         <span>{formatMessageTime(msg.created_at || "")}</span>
@@ -726,7 +778,7 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
 
       {/* Picker panel — opens above input */}
       {activeTab && (
-        <div className="border-t border-purple-500/10 bg-[#0c0c18]">
+        <div className="shrink-0 border-t border-purple-500/10 bg-[#0c0c18]">
           {/* Tab bar */}
           <div className="flex items-center gap-1 border-b border-white/5 px-3 pt-2">
             <button
@@ -814,7 +866,7 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
                     value={gifQuery}
                     onChange={(e) => handleGifSearchChange(e.target.value)}
                     placeholder="Search GIFs..."
-                    className="border-white/10 bg-white/[0.03] pl-8 text-sm"
+              className="border-white/10 bg-white/[0.03] pl-8 text-base"
                   />
                 </div>
                 {gifLoading ? (
@@ -886,27 +938,72 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
       )}
 
       {/* Input area — buttons on left, input in center, send on right */}
-      <div className="border-t border-purple-500/10 bg-[#0a0a14]">
-        <div className="flex items-end gap-2 p-3">
-          {/* Left side: Emoji + GIF buttons stacked vertically */}
-          <div className="flex flex-col gap-1">
+      <div className="shrink-0 border-t border-purple-500/10 bg-[#0a0a14]">
+        <div className="flex items-center gap-3 p-3">
+          {/* Left side: Emoji + GIF + Image buttons */}
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
-              size="icon-sm"
+              size="icon"
               onClick={() => setActiveTab(activeTab === "emoji" || activeTab === "kaomoji" ? null : "emoji")}
-              className={cn(activeTab === "emoji" || activeTab === "kaomoji" ? "text-purple-400" : "text-muted-foreground")}
+              className={cn(
+                "h-14 w-14 rounded-xl",
+                activeTab === "emoji" || activeTab === "kaomoji" ? "text-purple-400" : "text-muted-foreground"
+              )}
               aria-label="Emoji picker"
             >
-              <Smile className="size-5" />
+              <Smile className="size-7" />
             </Button>
             <Button
               variant="ghost"
-              size="icon-sm"
+              size="icon"
               onClick={() => setActiveTab(activeTab === "gif" ? null : "gif")}
-              className={cn(activeTab === "gif" ? "text-purple-400" : "text-muted-foreground")}
+              className={cn(
+                "h-14 w-14 rounded-xl",
+                activeTab === "gif" ? "text-purple-400" : "text-muted-foreground"
+              )}
               aria-label="GIF picker"
             >
-              <span className="text-[10px] font-bold">GIF</span>
+              <span className="text-sm font-bold">GIF</span>
+            </Button>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleImageUpload(file);
+              }}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                if (chatLevel < 5) {
+                  const thresholds = [0, 3, 9, 21, 45];
+                  const next = thresholds[chatLevel] ?? null;
+                  const needed = next !== null ? next - messages.length : 0;
+                  toast.error(`Reach Level 5 to send images! ${needed > 0 ? `${needed} more message${needed === 1 ? "" : "s"} to go.` : ""}`);
+                  return;
+                }
+                imageInputRef.current?.click();
+              }}
+              disabled={imageUploading || sending}
+              className={cn(
+                "h-14 w-14 rounded-xl",
+                chatLevel >= 5 ? "text-muted-foreground hover:text-purple-400" : "text-muted-foreground/40 cursor-not-allowed"
+              )}
+              aria-label={chatLevel >= 5 ? "Send image" : "Image sharing locked until Level 5"}
+              title={chatLevel >= 5 ? "Send image" : "Image sharing unlocks at Level 5"}
+            >
+              {imageUploading ? (
+                <span className="size-5 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+              ) : chatLevel >= 5 ? (
+                <ImagePlus className="size-6" />
+              ) : (
+                <Lock className="size-5" />
+              )}
             </Button>
           </div>
 
@@ -922,7 +1019,7 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
                 }
               }}
               placeholder="Type a message..."
-              className="min-h-[48px] border-white/10 bg-white/[0.03] pr-4"
+              className="h-14 border-white/10 bg-white/[0.03] pr-4 text-base"
             />
           </div>
 
@@ -930,10 +1027,10 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
           <Button
             onClick={handleSend}
             disabled={!input.trim() || sending}
-            className="h-12 w-12 shrink-0 rounded-xl bg-purple-600 px-3 text-white hover:bg-purple-500 shadow-[0_0_16px_rgba(147,51,234,0.4)]"
+            className="h-14 w-14 shrink-0 rounded-xl bg-purple-600 px-3 text-white hover:bg-purple-500 shadow-[0_0_16px_rgba(147,51,234,0.4)]"
             aria-label="Send message"
           >
-            <Send className="size-5" />
+            <Send className="size-6" />
           </Button>
         </div>
       </div>
@@ -941,17 +1038,17 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
   );
 
   return (
-    <>
+    <div className="flex h-[100dvh] flex-col overflow-hidden">
       <DashboardHeader />
-      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col pt-12 md:pt-16">
-        {/* Mobile */}
-        <div className="flex flex-1 flex-col md:hidden">
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col overflow-hidden">
+        {/* Mobile: full viewport, no top padding, input glued to bottom */}
+        <div className="flex h-full flex-col md:hidden">
           {chatContent}
         </div>
 
-        {/* Desktop: framed container with purple glow */}
-        <div className="hidden md:flex flex-1 flex-col px-6 py-4">
-          <div className="relative flex flex-1 flex-col overflow-hidden rounded-2xl border border-purple-500/25 bg-[#0a0a14] shadow-[0_0_50px_rgba(147,51,234,0.12)]">
+        {/* Desktop: framed container fills viewport */}
+        <div className="hidden md:flex h-full flex-col px-6">
+          <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-purple-500/25 bg-[#0a0a14] shadow-[0_0_50px_rgba(147,51,234,0.12)]">
             {/* Purple glow reflection on left side */}
             <div className="pointer-events-none absolute top-0 left-0 h-full w-1 bg-gradient-to-b from-purple-500/50 via-purple-500/25 to-purple-500/50 blur-sm" />
             {/* Purple glow reflection on right side */}
@@ -1015,6 +1112,6 @@ export function ChatWindow({ sessionId, oc1, oc2, oc2Name, myOcId }: ChatWindowP
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }

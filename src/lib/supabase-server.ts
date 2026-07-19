@@ -2,12 +2,16 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { Database } from "./database.types";
 
+function cleanEnv(value: string | undefined): string {
+  return (value || "").trim().replace(/\r?\n/g, "");
+}
+
 export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_URL),
+    cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
     {
       cookies: {
         getAll() {

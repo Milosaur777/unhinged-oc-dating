@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, Suspense, Fragment, type ReactNode } from "react";
+import { useEffect, useState, Suspense, Fragment, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronLeft,
@@ -42,9 +42,11 @@ import {
   getOCWithDetails,
   OCWithDetails,
   TablesInsert,
+  moderateImage,
+  deleteStorageObject,
 } from "@/lib/supabase-queries";
 import { generateRandomOC, RANDOM_TRAITS } from "@/lib/random-oc";
-import { inchesToFtIn, inchesToCm, generateId, getPublicImageUrl } from "@/lib/utils";
+import { generateId, getPublicImageUrl } from "@/lib/utils";
 import { toast } from "sonner";
 
 const SPECIES = [
@@ -139,14 +141,16 @@ interface FormState {
   romanticOrientation: string;
   romanticCustom: string;
   age: string;
-  heightInches: number;
+  height: string;
   personality: string;
   tags: string[];
   likes: string;
   dislikes: string;
   appearance: string;
   occupation: string;
+  occupationCustom: string;
   homeworld: string;
+  homeworldCustom: string;
   backstory: string;
   truth1: string;
   truth2: string;
@@ -250,14 +254,16 @@ function CreateOCForm() {
     romanticOrientation: ORIENTATIONS[0],
     romanticCustom: "",
     age: "",
-    heightInches: 66,
+    height: "",
     personality: "",
     tags: [],
     likes: "",
     dislikes: "",
     appearance: "",
     occupation: OCCUPATIONS[0],
+    occupationCustom: "",
     homeworld: HOMEWORLDS[0],
+    homeworldCustom: "",
     backstory: "",
     truth1: "",
     truth2: "",
@@ -299,6 +305,10 @@ function CreateOCForm() {
     }));
     const rawSpecies = oc.fields.find((f) => f.field_key === "species")?.value || SPECIES[0];
     const isCustomSpecies = !SPECIES.includes(rawSpecies);
+    const rawOccupation = get("occupation") || OCCUPATIONS[0];
+    const isCustomOccupation = !OCCUPATIONS.includes(rawOccupation);
+    const rawHomeworld = get("homeworld") || HOMEWORLDS[0];
+    const isCustomHomeworld = !HOMEWORLDS.includes(rawHomeworld);
     setForm({
       name: oc.name,
       species: isCustomSpecies ? "Other" : rawSpecies,
@@ -312,14 +322,16 @@ function CreateOCForm() {
         oc.fields.find((f) => f.field_key === "romantic_orientation")?.value || ORIENTATIONS[0],
       romanticCustom: "",
       age: oc.fields.find((f) => f.field_key === "age")?.value || "",
-      heightInches: parseInt(oc.fields.find((f) => f.field_key === "height_inches")?.value || "66", 10),
+      height: oc.fields.find((f) => f.field_key === "height_inches")?.value || "",
       personality: get("personality"),
       tags: oc.tags ?? [],
       likes: get("likes"),
       dislikes: get("dislikes"),
       appearance: get("appearance"),
-      occupation: get("occupation") || OCCUPATIONS[0],
-      homeworld: get("homeworld") || HOMEWORLDS[0],
+      occupation: isCustomOccupation ? "Other" : rawOccupation,
+      occupationCustom: isCustomOccupation ? rawOccupation : "",
+      homeworld: isCustomHomeworld ? "Other" : rawHomeworld,
+      homeworldCustom: isCustomHomeworld ? rawHomeworld : "",
       backstory: get("backstory"),
       truth1: oc.truths_and_lie?.[0] || "",
       truth2: oc.truths_and_lie?.[1] || "",
@@ -354,6 +366,10 @@ function CreateOCForm() {
   function populateFromGuest(oc: GuestOC) {
     const rawSpecies = oc.fields.find((f) => f.field_key === "species")?.value || SPECIES[0];
     const isCustomSpecies = !SPECIES.includes(rawSpecies);
+    const rawOccupation = oc.fields.find((f) => f.field_key === "occupation")?.value || OCCUPATIONS[0];
+    const isCustomOccupation = !OCCUPATIONS.includes(rawOccupation);
+    const rawHomeworld = oc.fields.find((f) => f.field_key === "homeworld")?.value || HOMEWORLDS[0];
+    const isCustomHomeworld = !HOMEWORLDS.includes(rawHomeworld);
     setForm({
       name: oc.name,
       species: isCustomSpecies ? "Other" : rawSpecies,
@@ -367,14 +383,16 @@ function CreateOCForm() {
         oc.fields.find((f) => f.field_key === "romantic_orientation")?.value || ORIENTATIONS[0],
       romanticCustom: "",
       age: oc.fields.find((f) => f.field_key === "age")?.value || "",
-      heightInches: parseInt(oc.fields.find((f) => f.field_key === "height_inches")?.value || "66", 10),
+      height: oc.fields.find((f) => f.field_key === "height_inches")?.value || "",
       personality: oc.fields.find((f) => f.field_key === "personality")?.value || "",
       tags: oc.tags ?? [],
       likes: oc.fields.find((f) => f.field_key === "likes")?.value || "",
       dislikes: oc.fields.find((f) => f.field_key === "dislikes")?.value || "",
       appearance: oc.fields.find((f) => f.field_key === "appearance")?.value || "",
-      occupation: oc.fields.find((f) => f.field_key === "occupation")?.value || OCCUPATIONS[0],
-      homeworld: oc.fields.find((f) => f.field_key === "homeworld")?.value || HOMEWORLDS[0],
+      occupation: isCustomOccupation ? "Other" : rawOccupation,
+      occupationCustom: isCustomOccupation ? rawOccupation : "",
+      homeworld: isCustomHomeworld ? "Other" : rawHomeworld,
+      homeworldCustom: isCustomHomeworld ? rawHomeworld : "",
       backstory: oc.fields.find((f) => f.field_key === "backstory")?.value || "",
       truth1: oc.truths_and_lie?.[0] || "",
       truth2: oc.truths_and_lie?.[1] || "",
@@ -426,14 +444,16 @@ function CreateOCForm() {
       romanticOrientation: random.romanticOrientation,
       romanticCustom: "",
       age: String(random.age),
-      heightInches: random.heightInches,
+      height: random.height,
       personality: random.personality,
       tags: random.tags,
       likes: random.likes,
       dislikes: random.dislikes,
       appearance: random.appearance,
       occupation: random.occupation,
+      occupationCustom: "",
       homeworld: random.homeworld,
+      homeworldCustom: "",
       backstory: random.backstory,
       truth1: random.truths[0],
       truth2: random.truths[1],
@@ -469,7 +489,7 @@ function CreateOCForm() {
         update("age", String(random.age));
         break;
       case "height_inches":
-        update("heightInches", random.heightInches);
+        update("height", random.height);
         break;
       case "personality":
         update("personality", random.personality);
@@ -488,9 +508,11 @@ function CreateOCForm() {
         break;
       case "occupation":
         update("occupation", random.occupation);
+        update("occupationCustom", "");
         break;
       case "homeworld":
         update("homeworld", random.homeworld);
+        update("homeworldCustom", "");
         break;
       case "backstory":
         update("backstory", random.backstory);
@@ -546,11 +568,6 @@ function CreateOCForm() {
       galleryImages: prev.galleryImages.filter((_, i) => i !== index),
     }));
   }
-
-  const heightDisplay = useMemo(
-    () => `${inchesToFtIn(form.heightInches)} / ${inchesToCm(form.heightInches)} cm`,
-    [form.heightInches]
-  );
 
   function makeField(
     key: string,
@@ -625,9 +642,23 @@ function CreateOCForm() {
     );
   }
 
+  function validateAge(ageStr: string): boolean {
+    const num = parseInt(ageStr.replace(/\D/g, ""), 10);
+    if (!isNaN(num) && num < 15) {
+      toast.error("Characters must be at least 15 years old.");
+      return false;
+    }
+    return true;
+  }
+
   async function handleSave() {
     if (!form.name.trim()) {
       toast.error("Name is required");
+      setStep(0);
+      return;
+    }
+
+    if (!validateAge(form.age)) {
       setStep(0);
       return;
     }
@@ -637,13 +668,27 @@ function CreateOCForm() {
       let imagePath = form.imageUrl;
       if (form.imageFile) {
         imagePath = await uploadImage(form.imageFile);
+        const result = await moderateImage(imagePath);
+        if (!result.safe) {
+          await deleteStorageObject(imagePath, "oc-images");
+          toast.error("Avatar image was flagged as inappropriate. Please choose a different image.");
+          setSaving(false);
+          return;
+        }
       }
 
       const galleryPaths: string[] = [];
       if (!isGuest) {
         for (const item of form.galleryImages) {
           if (item.file) {
-            galleryPaths.push(await uploadImage(item.file));
+            const path = await uploadImage(item.file);
+            const result = await moderateImage(path);
+            if (!result.safe) {
+              await deleteStorageObject(path, "oc-images");
+              toast.error("A gallery image was flagged as inappropriate and was skipped.");
+              continue;
+            }
+            galleryPaths.push(path);
           } else if (item.path) {
             galleryPaths.push(item.path);
           }
@@ -656,6 +701,10 @@ function CreateOCForm() {
         form.sexualOrientation === "Other" ? form.sexualCustom || "Other" : form.sexualOrientation;
       const romanticValue =
         form.romanticOrientation === "Other" ? form.romanticCustom || "Other" : form.romanticOrientation;
+      const occupationValue =
+        form.occupation === "Other" ? form.occupationCustom || "Other" : form.occupation;
+      const homeworldValue =
+        form.homeworld === "Other" ? form.homeworldCustom || "Other" : form.homeworld;
 
       const fields: Omit<TablesInsert<"oc_fields">, "id" | "oc_id">[] = [
         makeField("species", "Species", speciesValue, "select"),
@@ -663,13 +712,13 @@ function CreateOCForm() {
         makeField("sexual_orientation", "Sexual Orientation", sexualValue, "select"),
         makeField("romantic_orientation", "Romantic Orientation", romanticValue, "select"),
         makeField("age", "Age", form.age, "text"),
-        makeField("height_inches", "Height", String(form.heightInches), "number"),
+        makeField("height_inches", "Height", form.height, "text"),
         makeField("personality", "Personality", form.personality, "textarea"),
         makeField("likes", "Likes", form.likes, "text"),
         makeField("dislikes", "Dislikes", form.dislikes, "text"),
         makeField("appearance", "Appearance", form.appearance, "textarea"),
-        makeField("occupation", "Occupation", form.occupation, "select"),
-        makeField("homeworld", "Homeworld", form.homeworld, "select"),
+        makeField("occupation", "Occupation", occupationValue, "select"),
+        makeField("homeworld", "Homeworld", homeworldValue, "select"),
         makeField("backstory", "Backstory", form.backstory, "textarea"),
       ];
 
@@ -907,22 +956,17 @@ function CreateOCForm() {
                     id="age"
                     value={form.age}
                     onChange={(e) => update("age", e.target.value)}
-                    placeholder="25"
+                    placeholder="Must be 15 or older"
                   />
                 </div>
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <div className="flex flex-col gap-1.5">
                   {renderFieldHeader({ label: "Height", fieldKey: "height_inches" })}
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="range"
-                      min={36}
-                      max={96}
-                      value={form.heightInches}
-                      onChange={(e) => update("heightInches", parseInt(e.target.value, 10))}
-                      className="flex-1 accent-primary"
-                    />
-                    <span className="min-w-[110px] text-right text-sm font-medium">{heightDisplay}</span>
-                  </div>
+                  <Input
+                    id="height"
+                    value={form.height}
+                    onChange={(e) => update("height", e.target.value)}
+                    placeholder={`e.g. 5'8" / 173cm, 2 inches, 50 feet`}
+                  />
                 </div>
               </div>
 
@@ -1017,6 +1061,14 @@ function CreateOCForm() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {form.occupation === "Other" && (
+                    <Input
+                      value={form.occupationCustom}
+                      onChange={(e) => update("occupationCustom", e.target.value)}
+                      placeholder="Specify occupation"
+                      className="mt-1"
+                    />
+                  )}
                 </div>
                 <div className="flex flex-col gap-1.5">
                   {renderFieldHeader({ label: "Homeworld", fieldKey: "homeworld" })}
@@ -1032,6 +1084,14 @@ function CreateOCForm() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {form.homeworld === "Other" && (
+                    <Input
+                      value={form.homeworldCustom}
+                      onChange={(e) => update("homeworldCustom", e.target.value)}
+                      placeholder="Specify homeworld"
+                      className="mt-1"
+                    />
+                  )}
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">

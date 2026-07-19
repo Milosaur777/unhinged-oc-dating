@@ -323,7 +323,7 @@ export interface RandomOCData {
   sexualOrientation: string;
   romanticOrientation: string;
   age: number;
-  heightInches: number;
+  height: string;
   personality: string;
   tags: string[];
   likes: string;
@@ -339,14 +339,18 @@ export interface RandomOCData {
 
 export function generateRandomOC(): RandomOCData {
   const truths = pickMany(RANDOM_TRUTHS, 2) as [string, string];
+  const ft = Math.floor(Math.random() * 5) + 4;
+  const inches = Math.floor(Math.random() * 12);
+  const totalInches = ft * 12 + inches;
+  const cm = Math.round(totalInches * 2.54);
   return {
     name: pickOne(RANDOM_NAMES),
     species: pickOne(RANDOM_SPECIES),
     gender: pickOne(RANDOM_GENDERS),
     sexualOrientation: pickOne(RANDOM_ORIENTATIONS),
     romanticOrientation: pickOne(RANDOM_ORIENTATIONS),
-    age: Math.floor(Math.random() * 15) + 18,
-    heightInches: Math.floor(Math.random() * 36) + 55,
+    age: Math.floor(Math.random() * 485) + 15,
+    height: `${ft}'${inches}" / ${cm}cm`,
     personality: pickOne(RANDOM_PERSONALITIES),
     tags: pickMany(RANDOM_TRAITS, 3),
     likes: pickMany(RANDOM_LIKES, 3).join(", "),
