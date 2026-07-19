@@ -327,8 +327,26 @@ export default function CreatorPage() {
     try {
       const { createClient } = await import("@/lib/supabase");
       const supabase = createClient();
-      await supabase.from("ocs").delete().eq("user_id", user.id);
-      await supabase.from("profiles").delete().eq("id", user.id);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        throw new Error("Not authenticated");
+      }
+
+      const res = await fetch("/api/delete-account", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Delete failed (${res.status})`);
+      }
+
       await supabase.auth.signOut();
       toast.success("Your account has been deleted. Thank you for being part of the Unhinged community.");
       router.push("/auth");
