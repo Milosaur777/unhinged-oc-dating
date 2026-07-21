@@ -401,7 +401,15 @@ export function ChatWindow({ sessionId, chatLevel, oc1, oc2, oc2Name, myOcId }: 
 
   async function handleImageUpload(file: File) {
     if (chatLevel < 5) {
-      toast.error(`Reach Level 5 to send images! Currently Lv. ${chatLevel}`);
+      const thresholds = [0, 3, 9, 21, 45];
+      const next = thresholds[chatLevel] ?? null;
+      const myMsgCount = messages.filter((m) => m.from_oc_id === myOC.id).length;
+      const theirMsgCount = messages.filter((m) => m.from_oc_id !== myOC.id).length;
+      const minCount = Math.min(myMsgCount, theirMsgCount);
+      const needed = next !== null ? next - minCount : 0;
+      toast.error(
+        `Reach Level 5 to send images! ${needed > 0 ? `${needed} more message${needed === 1 ? "" : "s"} until next level.` : ""}`
+      );
       return;
     }
     if (imageUploading || sending) return;
@@ -604,9 +612,11 @@ export function ChatWindow({ sessionId, chatLevel, oc1, oc2, oc2Name, myOcId }: 
               title={chatLevel >= 5 ? "Max level reached — image sharing unlocked!" : `Lv. ${chatLevel} · ${(() => {
                 const thresholds = [0, 3, 9, 21, 45];
                 const next = thresholds[chatLevel] ?? null;
-                const current = thresholds[chatLevel - 1] ?? 0;
-                const needed = next !== null ? next - messages.length : 0;
-                return needed > 0 ? `${needed} more message${needed === 1 ? "" : "s"} to Lv. ${chatLevel + 1}` : "Level up incoming...";
+                const myMsgCount = messages.filter((m) => m.from_oc_id === myOC.id).length;
+                const theirMsgCount = messages.filter((m) => m.from_oc_id !== myOC.id).length;
+                const minCount = Math.min(myMsgCount, theirMsgCount);
+                const needed = next !== null ? next - minCount : 0;
+                return needed > 0 ? `${needed} more message${needed === 1 ? "" : "s"} until next level` : "Level up incoming...";
               })()}`}
             >
               Lv. {chatLevel}
@@ -983,8 +993,11 @@ export function ChatWindow({ sessionId, chatLevel, oc1, oc2, oc2Name, myOcId }: 
                 if (chatLevel < 5) {
                   const thresholds = [0, 3, 9, 21, 45];
                   const next = thresholds[chatLevel] ?? null;
-                  const needed = next !== null ? next - messages.length : 0;
-                  toast.error(`Reach Level 5 to send images! ${needed > 0 ? `${needed} more message${needed === 1 ? "" : "s"} to go.` : ""}`);
+                  const myMsgCount = messages.filter((m) => m.from_oc_id === myOC.id).length;
+                  const theirMsgCount = messages.filter((m) => m.from_oc_id !== myOC.id).length;
+                  const minCount = Math.min(myMsgCount, theirMsgCount);
+                  const needed = next !== null ? next - minCount : 0;
+                  toast.error(`Reach Level 5 to send images! ${needed > 0 ? `${needed} more message${needed === 1 ? "" : "s"} until next level.` : ""}`);
                   return;
                 }
                 imageInputRef.current?.click();
