@@ -625,9 +625,6 @@ export function ChatWindow({ sessionId, chatLevel, oc1, oc2, oc2Name, myOcId }: 
             </span>
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="text-muted-foreground md:hidden" onClick={() => setShowSearch((s) => !s)}>
-          <Search className="size-5" />
-        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
@@ -637,7 +634,7 @@ export function ChatWindow({ sessionId, chatLevel, oc1, oc2, oc2Name, myOcId }: 
             <MoreVertical className="size-5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setShowSearch((s) => !s)} className="md:hidden">
+            <DropdownMenuItem onClick={() => setShowSearch((s) => !s)}>
               <Search className="size-4 mr-2" />
               Search Messages
             </DropdownMenuItem>

@@ -11,8 +11,8 @@
 CREATE OR REPLACE FUNCTION update_chat_level()
 RETURNS TRIGGER AS $$
 DECLARE
-    oc1_id_var TEXT;
-    oc2_id_var TEXT;
+    oc1_id_var UUID;
+    oc2_id_var UUID;
     count1 INTEGER;
     count2 INTEGER;
     min_count INTEGER;
