@@ -54,7 +54,7 @@ const MOBILE_OFFSETS: Record<string, number> = {
   "/headers/Lounge.avif": 75,
   "/headers/Church.avif": 65,
   "/headers/Dungeon.avif": 85,
-  "/headers/Fireplace.avif": 60,
+  "/headers/Fireplace.avif": 75,
   "/headers/Forest.avif": 90,
   "/headers/Gala.avif": 30,
   "/headers/MasterBedroom.avif": 60,
@@ -64,11 +64,13 @@ const MOBILE_OFFSETS: Record<string, number> = {
   "/headers/PrisonCell.avif": 60,
   "/headers/Shrine.avif": 60,
   "/headers/Sky.avif": 50,
-  "/headers/SnowyPass.avif": 70,
+  "/headers/SnowyPass.avif": 85,
   "/headers/Spirits.avif": 60,
   "/headers/Study.avif": 70,
   "/headers/Tavern.avif": 90,
-  "/headers/Underwater.avif": 65,
+  "/headers/Underwater.avif": 80,
+  "/headers/InfinityPoolPenthouse.avif": 45,
+  "/headers/LuxSofa.avif": 75,
 };
 
 const PRESET_HEADERS = [

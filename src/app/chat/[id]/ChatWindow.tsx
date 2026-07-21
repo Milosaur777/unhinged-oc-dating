@@ -377,6 +377,7 @@ export function ChatWindow({ sessionId, chatLevel, oc1, oc2, oc2Name, myOcId }: 
       setMessages((prev) => [...prev, msg]);
       setInput("");
     } catch (err) {
+      console.error("[chat] Failed to send message:", err);
       toast.error(err instanceof Error ? err.message : "Failed to send message");
     } finally {
       setSending(false);
@@ -624,7 +625,7 @@ export function ChatWindow({ sessionId, chatLevel, oc1, oc2, oc2Name, myOcId }: 
             </span>
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => setShowSearch((s) => !s)}>
+        <Button variant="ghost" size="icon" className="text-muted-foreground md:hidden" onClick={() => setShowSearch((s) => !s)}>
           <Search className="size-5" />
         </Button>
         <DropdownMenu>
@@ -636,6 +637,10 @@ export function ChatWindow({ sessionId, chatLevel, oc1, oc2, oc2Name, myOcId }: 
             <MoreVertical className="size-5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setShowSearch((s) => !s)} className="md:hidden">
+              <Search className="size-4 mr-2" />
+              Search Messages
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleExportChat}>
               <Download className="size-4 mr-2" />
               Export Chat
@@ -947,9 +952,10 @@ export function ChatWindow({ sessionId, chatLevel, oc1, oc2, oc2Name, myOcId }: 
         </div>
       )}
 
-      {/* Input area — buttons on left, input in center, send on right */}
+      {/* Input area */}
       <div className="shrink-0 border-t border-purple-500/10 bg-[#0a0a14]">
-        <div className="flex items-center gap-3 p-3">
+        {/* Desktop: buttons inline with input */}
+        <div className="hidden md:flex items-center gap-3 p-3">
           {/* Left side: Emoji + GIF + Image buttons */}
           <div className="flex items-center gap-2">
             <Button
@@ -1020,9 +1026,9 @@ export function ChatWindow({ sessionId, chatLevel, oc1, oc2, oc2Name, myOcId }: 
             </Button>
           </div>
 
-          {/* Center: Input field */}
+          {/* Center: Textarea field */}
           <div className="relative flex-1">
-            <Input
+            <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
@@ -1032,7 +1038,8 @@ export function ChatWindow({ sessionId, chatLevel, oc1, oc2, oc2Name, myOcId }: 
                 }
               }}
               placeholder="Type a message..."
-              className="h-14 border-white/10 bg-white/[0.03] pr-4 text-base"
+              rows={1}
+              className="min-h-14 max-h-32 resize-none border-white/10 bg-white/[0.03] pr-4 text-base"
             />
           </div>
 
@@ -1045,6 +1052,102 @@ export function ChatWindow({ sessionId, chatLevel, oc1, oc2, oc2Name, myOcId }: 
           >
             <Send className="size-6" />
           </Button>
+        </div>
+
+        {/* Mobile: buttons on top row, input + send on bottom row */}
+        <div className="flex md:hidden flex-col gap-2 p-2">
+          {/* Top row: compact buttons */}
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setActiveTab(activeTab === "emoji" || activeTab === "kaomoji" ? null : "emoji")}
+              className={cn(
+                "h-9 w-9 rounded-lg",
+                activeTab === "emoji" || activeTab === "kaomoji" ? "text-purple-400" : "text-muted-foreground"
+              )}
+              aria-label="Emoji picker"
+            >
+              <Smile className="size-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setActiveTab(activeTab === "gif" ? null : "gif")}
+              className={cn(
+                "h-9 w-9 rounded-lg",
+                activeTab === "gif" ? "text-purple-400" : "text-muted-foreground"
+              )}
+              aria-label="GIF picker"
+            >
+              <span className="text-xs font-bold">GIF</span>
+            </Button>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleImageUpload(file);
+              }}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                if (chatLevel < 5) {
+                  const thresholds = [0, 3, 9, 21, 45];
+                  const next = thresholds[chatLevel] ?? null;
+                  const myMsgCount = messages.filter((m) => m.from_oc_id === myOC.id).length;
+                  const theirMsgCount = messages.filter((m) => m.from_oc_id !== myOC.id).length;
+                  const minCount = Math.min(myMsgCount, theirMsgCount);
+                  const needed = next !== null ? next - minCount : 0;
+                  toast.error(`Reach Level 5 to send images! ${needed > 0 ? `${needed} more message${needed === 1 ? "" : "s"} until next level.` : ""}`);
+                  return;
+                }
+                imageInputRef.current?.click();
+              }}
+              disabled={imageUploading || sending}
+              className={cn(
+                "h-9 w-9 rounded-lg",
+                chatLevel >= 5 ? "text-muted-foreground hover:text-purple-400" : "text-muted-foreground/40 cursor-not-allowed"
+              )}
+              aria-label={chatLevel >= 5 ? "Send image" : "Image sharing locked until Level 5"}
+              title={chatLevel >= 5 ? "Send image" : "Image sharing unlocks at Level 5"}
+            >
+              {imageUploading ? (
+                <span className="size-4 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+              ) : chatLevel >= 5 ? (
+                <ImagePlus className="size-5" />
+              ) : (
+                <Lock className="size-4" />
+              )}
+            </Button>
+          </div>
+
+          {/* Bottom row: textarea + send */}
+          <div className="flex items-end gap-2">
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                // On mobile, Enter key from on-screen keyboard should NOT send
+                // Only send via the send button
+              }}
+              placeholder="Type a message..."
+              rows={1}
+              className="min-h-10 max-h-24 resize-none flex-1 border-white/10 bg-white/[0.03] pr-3 text-base"
+            />
+            <Button
+              onClick={handleSend}
+              disabled={!input.trim() || sending}
+              className="h-10 w-10 shrink-0 rounded-xl bg-purple-600 px-2 text-white hover:bg-purple-500 shadow-[0_0_16px_rgba(147,51,234,0.4)]"
+              aria-label="Send message"
+            >
+              <Send className="size-5" />
+            </Button>
+          </div>
         </div>
       </div>
     </>
