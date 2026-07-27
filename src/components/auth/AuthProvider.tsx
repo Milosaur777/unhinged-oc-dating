@@ -18,6 +18,7 @@ export interface GuestOC {
   images?: string[];
   fields: { field_key: string; value: string | null; label: string }[];
   tags: string[];
+  block_tags?: string[];
   truths_and_lie: string[];
   created_at: string;
 }

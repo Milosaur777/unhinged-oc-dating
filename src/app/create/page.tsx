@@ -87,7 +87,7 @@ const ORIENTATIONS = [
   "Straight",
   "Asexual",
   "Demisexual",
-  "Omnisexual",
+  "Omniromantic",
   "Other",
 ];
 
@@ -144,6 +144,7 @@ interface FormState {
   height: string;
   personality: string;
   tags: string[];
+  blockTags: string[];
   likes: string;
   dislikes: string;
   appearance: string;
@@ -185,6 +186,7 @@ const DEFAULT_VISIBILITY: Record<string, boolean> = {
   lie: true,
   openFeed: true,
   tags: true,
+  block_tags: true,
 };
 
 const DEFAULT_SKIPPED: Record<string, boolean> = {
@@ -206,6 +208,7 @@ const DEFAULT_SKIPPED: Record<string, boolean> = {
   lie: false,
   openFeed: false,
   tags: false,
+  block_tags: false,
 };
 
 const STEPS = [
@@ -257,6 +260,7 @@ function CreateOCForm() {
     height: "",
     personality: "",
     tags: [],
+    blockTags: [],
     likes: "",
     dislikes: "",
     appearance: "",
@@ -325,6 +329,7 @@ function CreateOCForm() {
       height: oc.fields.find((f) => f.field_key === "height_inches")?.value || "",
       personality: get("personality"),
       tags: oc.tags ?? [],
+      blockTags: oc.block_tags ?? [],
       likes: get("likes"),
       dislikes: get("dislikes"),
       appearance: get("appearance"),
@@ -386,6 +391,7 @@ function CreateOCForm() {
       height: oc.fields.find((f) => f.field_key === "height_inches")?.value || "",
       personality: oc.fields.find((f) => f.field_key === "personality")?.value || "",
       tags: oc.tags ?? [],
+      blockTags: oc.block_tags ?? [],
       likes: oc.fields.find((f) => f.field_key === "likes")?.value || "",
       dislikes: oc.fields.find((f) => f.field_key === "dislikes")?.value || "",
       appearance: oc.fields.find((f) => f.field_key === "appearance")?.value || "",
@@ -447,6 +453,7 @@ function CreateOCForm() {
       height: random.height,
       personality: random.personality,
       tags: random.tags,
+      blockTags: random.blockTags,
       likes: random.likes,
       dislikes: random.dislikes,
       appearance: random.appearance,
@@ -496,6 +503,9 @@ function CreateOCForm() {
         break;
       case "tags":
         update("tags", random.tags);
+        break;
+      case "block_tags":
+        update("blockTags", random.blockTags);
         break;
       case "likes":
         update("likes", random.likes);
@@ -739,6 +749,7 @@ function CreateOCForm() {
             label: f.label,
           })),
           tags: form.skippedFields.tags ? [] : form.tags,
+          block_tags: form.skippedFields.block_tags ? [] : form.blockTags,
           truths_and_lie: truthsAndLie,
           created_at: new Date().toISOString(),
         };
@@ -756,6 +767,7 @@ function CreateOCForm() {
         user_id: user!.id,
         name: form.name,
         tags: form.skippedFields.tags ? [] : form.tags,
+        block_tags: form.skippedFields.block_tags ? [] : form.blockTags,
         truths_and_lie: truthsAndLie,
         image_url: imagePath,
         images: galleryPaths.length ? galleryPaths : null,
@@ -803,7 +815,7 @@ function CreateOCForm() {
       <DashboardHeader />
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-6 pt-20 md:pt-24">
         <div className="flex items-center justify-between gap-2">
-          <h1 className="text-xl font-bold sm:text-2xl">{editId ? "Edit OC" : "Create OC"}</h1>
+          <h1 className="text-xl font-bold sm:text-2xl">{editId ? "Edit RP/OC" : "Create RP/OC"}</h1>
           <Button variant="outline" onClick={handleRandomize} className="gap-1.5">
             <Dices className="size-4" />
             <span className="hidden sm:inline">Random</span>
@@ -1003,6 +1015,18 @@ function CreateOCForm() {
                   onChange={(tags) => update("tags", tags)}
                   suggestions={RANDOM_TRAITS}
                 />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                {renderFieldHeader({ label: "Block Tags", fieldKey: "block_tags" })}
+                <TagInput
+                  tags={form.blockTags}
+                  onChange={(tags) => update("blockTags", tags)}
+                  placeholder="Add tags to exclude from swiping..."
+                  suggestions={RANDOM_TRAITS}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Characters with any of these tags will be hidden from your swipe roster.
+                </p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
@@ -1269,7 +1293,7 @@ function CreateOCForm() {
           ) : (
             <Button onClick={handleSave} disabled={saving} className="gap-1">
               <Sparkles className="size-4" />
-              {saving ? "Saving..." : editId ? "Update OC" : "Create OC"}
+              {saving ? "Saving..." : editId ? "Update RP/OC" : "Create RP/OC"}
             </Button>
           )}
         </div>

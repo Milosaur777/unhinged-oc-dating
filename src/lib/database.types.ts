@@ -388,6 +388,7 @@ export type Database = {
           name: string
           sort_order: number | null
           tags: string[] | null
+          block_tags: string[] | null
           truths_and_lie: string[] | null
           updated_at: string | null
           user_id: string
@@ -405,6 +406,7 @@ export type Database = {
           name?: string
           sort_order?: number | null
           tags?: string[] | null
+          block_tags?: string[] | null
           truths_and_lie?: string[] | null
           updated_at?: string | null
           user_id: string
@@ -422,6 +424,7 @@ export type Database = {
           name?: string
           sort_order?: number | null
           tags?: string[] | null
+          block_tags?: string[] | null
           truths_and_lie?: string[] | null
           updated_at?: string | null
           user_id?: string

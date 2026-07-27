@@ -326,6 +326,7 @@ export interface RandomOCData {
   height: string;
   personality: string;
   tags: string[];
+  blockTags: string[];
   likes: string;
   dislikes: string;
   appearance: string;
@@ -353,6 +354,7 @@ export function generateRandomOC(): RandomOCData {
     height: `${ft}'${inches}" / ${cm}cm`,
     personality: pickOne(RANDOM_PERSONALITIES),
     tags: pickMany(RANDOM_TRAITS, 3),
+    blockTags: Math.random() > 0.7 ? pickMany(RANDOM_TRAITS, Math.floor(Math.random() * 2) + 1) : [],
     likes: pickMany(RANDOM_LIKES, 3).join(", "),
     dislikes: pickMany(RANDOM_DISLIKES, 2).join(", "),
     appearance: pickOne(RANDOM_APPEARANCES),

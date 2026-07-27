@@ -21,6 +21,7 @@ export interface OCWithDetails {
   is_premade: boolean | null;
   brand: number | null;
   tags: string[] | null;
+  block_tags: string[] | null;
   truths_and_lie: string[] | null;
   sort_order: number | null;
   created_at: string | null;
@@ -339,6 +340,18 @@ export async function getSwipeCandidates(
   if (blockedByError) throw blockedByError;
   blockedByData?.forEach((b) => swipedIds.add(b.blocker_oc_id));
 
+  // Gather all block tags from the user's OCs
+  const { data: myOcsData } = await supabase
+    .from("ocs")
+    .select("block_tags")
+    .in("id", myOcIds);
+  const allBlockTags = new Set<string>();
+  for (const oc of myOcsData ?? []) {
+    for (const tag of oc.block_tags ?? []) {
+      allBlockTags.add(tag.toLowerCase());
+    }
+  }
+
   const { data, error } = await supabase
     .from("ocs")
     .select("*, fields:oc_fields(*), feed:oc_open_feed(*)")
@@ -349,11 +362,21 @@ export async function getSwipeCandidates(
     .limit(limit);
   if (error) throw error;
 
-  return (data ?? []).map((oc) => ({
+  const candidates = (data ?? []).map((oc) => ({
     ...oc,
     fields: (oc.fields as unknown as OCField[]) ?? [],
     feed: (oc.feed as unknown as OCOpenFeed[]) ?? [],
   })) as OCWithDetails[];
+
+  // Filter out candidates whose tags match any of the user's block tags
+  if (allBlockTags.size > 0) {
+    return candidates.filter((oc) => {
+      const ocTags = (oc.tags ?? []).map((t) => t.toLowerCase());
+      return !ocTags.some((tag) => allBlockTags.has(tag));
+    });
+  }
+
+  return candidates;
 }
 
 export async function getIncomingLikes(myOcIds: string[]): Promise<IncomingLike[]> {
