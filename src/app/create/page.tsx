@@ -1293,7 +1293,7 @@ function CreateOCForm() {
           ) : (
             <Button onClick={handleSave} disabled={saving} className="gap-1">
               <Sparkles className="size-4" />
-              {saving ? "Saving..." : editId ? "Update RP/OC" : "Create RP/OC"}
+              {saving ? "Saving..." : editId ? "Update Character" : "Create Character"}
             </Button>
           )}
         </div>
