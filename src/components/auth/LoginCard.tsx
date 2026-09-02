@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GlassCard } from "@/components/ui/glass-card";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { OnboardingTutorial } from "@/components/tutorial/OnboardingTutorial";
 import { toast } from "sonner";
 
 function SeparatorWithText({ text }: { text: string }) {
@@ -82,9 +83,12 @@ export function LoginCard() {
           </div>
         </div>
 
-        <Button onClick={handleQuickTest} className="mt-4 w-full">
-          Quick Test Login
-        </Button>
+        <div className="mt-4 flex flex-col gap-3">
+          <OnboardingTutorial />
+          <Button onClick={handleQuickTest} className="w-full">
+            Quick Test Login
+          </Button>
+        </div>
 
         <div className="mt-4">
           <SeparatorWithText text="or sign in manually" />
