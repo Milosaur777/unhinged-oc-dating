@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Flame, LogIn, UserPlus, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { OnboardingTutorial } from "@/components/tutorial/OnboardingTutorial";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -29,6 +30,7 @@ export default function AuthPage() {
         </div>
 
         <div className="flex w-full flex-col gap-3">
+          <OnboardingTutorial />
           <Button onClick={handleGuest} variant="outline" className="w-full gap-2">
             <Zap className="size-4" />
             Quick Test Login
