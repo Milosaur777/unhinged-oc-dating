@@ -19,19 +19,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ safe: true, skipped: true });
     }
 
-    const res = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageUrl }),
-    });
+    let res;
+    try {
+      res = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl }),
+      });
+    } catch (fetchErr) {
+      console.error("N8n moderation webhook unreachable:", fetchErr);
+      // Fail-open: if n8n is down, allow the image
+      return NextResponse.json({ safe: true, skipped: true, reason: "n8n_unreachable" });
+    }
 
     if (!res.ok) {
       const text = await res.text().catch(() => "Unknown error");
       console.error("N8n moderation webhook failed:", res.status, text);
-      return NextResponse.json(
-        { error: "Moderation service unavailable" },
-        { status: 502 }
-      );
+      // Fail-open: if n8n errors, allow the image
+      return NextResponse.json({ safe: true, skipped: true, reason: "n8n_error" });
     }
 
     const result = await res.json().catch(() => ({}));
