@@ -364,7 +364,7 @@ export default function DashboardPage() {
           {/* Creator banner */}
           <div
             className={cn(
-              "relative h-48 w-full overflow-hidden bg-background md:h-64",
+              "relative min-h-48 w-full overflow-hidden bg-background md:min-h-64",
               !headerUrl && "banner-gradient"
             )}
           >
