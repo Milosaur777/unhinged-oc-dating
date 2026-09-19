@@ -354,6 +354,7 @@ export default function DashboardPage() {
   }
 
   const headerUrl = getPublicImageUrl(profile?.creator_header_url);
+  const displayHeaderUrl = headerUrl || (isGuest ? "/headers/Abstract.avif" : null);
 
   return (
     <>
@@ -365,10 +366,10 @@ export default function DashboardPage() {
           <div
             className={cn(
               "relative min-h-48 w-full overflow-hidden bg-background md:min-h-64",
-              !headerUrl && "banner-gradient"
+              !displayHeaderUrl && "banner-gradient"
             )}
           >
-            {headerUrl && (
+            {displayHeaderUrl && (
               <>
                 <div
                   className="absolute inset-0"
@@ -377,11 +378,11 @@ export default function DashboardPage() {
                   style={{ userSelect: "none" }}
                 >
                   <Image
-                    src={headerUrl}
+                    src={displayHeaderUrl}
                     alt="Creator banner"
                     fill
-                    className={cn("object-cover object-right-top md:object-right-top", MOBILE_OFFSETS[headerUrl] != null && "header-mobile-offset")}
-                    style={MOBILE_OFFSETS[headerUrl] != null ? { "--mobile-offset": `${MOBILE_OFFSETS[headerUrl]}%` } as React.CSSProperties : undefined}
+                    className={cn("object-cover object-right-top md:object-right-top", MOBILE_OFFSETS[displayHeaderUrl] != null && "header-mobile-offset")}
+                    style={MOBILE_OFFSETS[displayHeaderUrl] != null ? { "--mobile-offset": `${MOBILE_OFFSETS[displayHeaderUrl]}%` } as React.CSSProperties : undefined}
                     priority
                     sizes="100vw"
                     draggable={false}
@@ -391,7 +392,7 @@ export default function DashboardPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent md:via-transparent" />
               </>
             )}
-            <div className="absolute inset-0 flex flex-col justify-between px-4 py-4 md:px-6 md:py-5">
+            <div className="relative z-10 flex flex-col justify-between px-4 py-4 md:px-6 md:py-5">
               <div>
                 <h1 className="inline-flex items-center gap-2 text-4xl font-extrabold lg:text-5xl">
                   <span className="bg-gradient-to-r from-primary via-pink-400 to-purple-400 bg-clip-text text-transparent">
@@ -400,7 +401,7 @@ export default function DashboardPage() {
                 </h1>
                 <p className="text-base text-muted-foreground/80">
                   {isGuest
-                    ? "Guest mode — your characters are stored locally."
+                    ? "Guest mode, your characters are stored locally."
                     : "Create and manage your characters."}
                 </p>
               </div>
